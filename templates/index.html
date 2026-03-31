@@ -151,6 +151,7 @@
             display: flex;
             flex-direction: column;
             background-color: #36393f;
+            position: relative;
         }
 
         .chat-header {
@@ -160,6 +161,7 @@
             display: flex;
             align-items: center;
             font-weight: 600;
+            flex-shrink: 0;
         }
 
         .chat-channel-name {
@@ -176,6 +178,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 16px;
+            padding-bottom: 0;
         }
 
         .message-group {
@@ -238,6 +241,8 @@
         .chat-input-container {
             padding: 16px;
             border-top: 1px solid #202225;
+            background-color: #36393f;
+            flex-shrink: 0;
         }
 
         .chat-input {
@@ -475,7 +480,8 @@
                 console.log('DiscordLikeChat constructor called');
                 // Global state management
                 this.socket = io();
-                this.currentUsername = localStorage.getItem('username') || 'Anonymous';
+                this.currentUsername = null; // Start as null, will be set after login
+                this.isLoggedIn = false;
                 this.currentServer = 'home'; // 'home', 'dms', or server id
                 this.currentChannel = 'general';
                 this.servers = {
@@ -494,10 +500,9 @@
                 this.typingTimeout = null;
 
                 // Initialize UI
-                this.createUI();
+                this.createLoginScreen();
                 this.setupEventListeners();
                 this.loadSettings();
-                this.initializeServers();
             }
 
             // Utility function to create DOM elements
@@ -536,6 +541,68 @@
 
                 // Then create the full UI
                 this.createFullUI();
+            }
+
+            // Create login screen
+            createLoginScreen() {
+                console.log('Creating login screen');
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #36393f; color: white;">
+                        <div style="background: #2f3136; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); width: 100%; max-width: 400px;">
+                            <h1 style="text-align: center; margin-bottom: 30px; color: #5865f2;">LAN Saturn</h1>
+                            <h2 style="text-align: center; margin-bottom: 20px; font-size: 18px;">Join the Chat</h2>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Username</label>
+                                <input type="text" id="login-username" placeholder="Enter your username"
+                                       style="width: 100%; padding: 12px; background: #202225; border: 1px solid #202225; border-radius: 4px; color: white; font-size: 14px;">
+                            </div>
+
+                            <div style="margin-bottom: 30px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Password (Optional)</label>
+                                <input type="password" id="login-password" placeholder="Enter password (for future use)"
+                                       style="width: 100%; padding: 12px; background: #202225; border: 1px solid #202225; border-radius: 4px; color: white; font-size: 14px;">
+                            </div>
+
+                            <button onclick="window.chatApp.attemptLogin()"
+                                    style="width: 100%; padding: 12px; background: #5865f2; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                                Join Chat
+                            </button>
+
+                            <div id="login-message" style="margin-top: 20px; text-align: center; color: #ff6b6b;"></div>
+                        </div>
+                    </div>
+                `;
+
+                // Auto-focus username field
+                setTimeout(() => {
+                    const usernameField = document.getElementById('login-username');
+                    if (usernameField) usernameField.focus();
+                }, 100);
+            }
+
+            // Attempt login
+            attemptLogin() {
+                const username = document.getElementById('login-username').value.trim();
+                const password = document.getElementById('login-password').value;
+
+                if (!username) {
+                    this.showLoginMessage('Please enter a username');
+                    return;
+                }
+
+                // Send login request
+                this.socket.emit('login', { username, password });
+            }
+
+            // Show login message
+            showLoginMessage(message, isError = true) {
+                const messageDiv = document.getElementById('login-message');
+                if (messageDiv) {
+                    messageDiv.textContent = message;
+                    messageDiv.style.color = isError ? '#ff6b6b' : '#51cf66';
+                }
             }
 
             createFullUI() {
@@ -859,55 +926,92 @@
             setupEventListeners() {
                 console.log('Setting up Socket.IO event listeners');
 
+                // Login response
+                this.socket.on('login_response', (data) => {
+                    if (data.success) {
+                        this.currentUsername = data.username;
+                        this.isLoggedIn = true;
+                        localStorage.setItem('username', this.currentUsername);
+                        this.showLoginMessage(data.message, false);
+
+                        // Initialize main UI after successful login
+                        setTimeout(() => {
+                            this.createUI();
+                            this.initializeServers();
+                            // Join default channel
+                            this.socket.emit('join_channel', {
+                                channel: this.currentChannel,
+                                username: this.currentUsername
+                            });
+                        }, 1000);
+                    } else {
+                        this.showLoginMessage(data.message);
+                    }
+                });
+
                 // Connection established
                 this.socket.on('connect', () => {
                     console.log('Connected to server');
-                    this.socket.emit('join', { username: this.currentUsername });
+                    // Don't auto-join anymore, wait for login
                 });
 
                 // User joined
                 this.socket.on('user_joined', (data) => {
                     console.log('User joined:', data.username);
-                    this.displayNotification(`${data.username} joined the server`);
+                    if (this.isLoggedIn) {
+                        this.displayNotification(`${data.username} joined the server`);
+                    }
                 });
 
                 // User left
                 this.socket.on('user_left', (data) => {
                     console.log('User left:', data.username);
-                    this.displayNotification(`${data.username} left the server`);
+                    if (this.isLoggedIn) {
+                        this.displayNotification(`${data.username} left the server`);
+                    }
                 });
 
                 // Receive message
                 this.socket.on('receive_message', (data) => {
                     console.log('Received message:', data);
-                    this.displayMessage(data.username, data.message, data.timestamp);
-                    if (this.settings.notifications) {
-                        // Notification without sound
+                    if (this.isLoggedIn) {
+                        this.displayMessage(data.username, data.message, data.timestamp);
+                        if (this.settings.notifications) {
+                            // Notification without sound
+                        }
                     }
                 });
 
                 // Private message
                 this.socket.on('private_message', (data) => {
                     console.log('Received private message:', data);
-                    this.handlePrivateMessage(data);
+                    if (this.isLoggedIn) {
+                        this.handlePrivateMessage(data);
+                    }
                 });
 
                 // User list updates
                 this.socket.on('user_list', (data) => {
                     console.log('User list update:', data);
-                    this.onlineUsers = data.users;
-                    this.updateMembersList();
+                    if (this.isLoggedIn) {
+                        this.onlineUsers = data.users;
+                        this.updateMembersList();
+                    }
                 });
 
                 // Typing indicators
                 this.socket.on('user_typing', (data) => {
-                    this.typingUsers.add(data.username);
-                    this.updateTypingIndicator();
+                    if (this.isLoggedIn) {
+                        this.typingUsers.add(data.username);
+                        this.updateTypingIndicator();
+                    }
                 });
 
                 this.socket.on('user_stopped_typing', (data) => {
-                    this.typingUsers.delete(data.username);
-                    this.updateTypingIndicator();
+                    if (this.isLoggedIn) {
+                        this.typingUsers.delete(data.username);
+                        this.updateTypingIndicator();
+                    }
                 });
             }
 
@@ -954,6 +1058,12 @@
                 this.currentChannel = channelName;
                 this.loadMessages();
                 this.updateChannelHeader();
+
+                // Join the new channel on server
+                this.socket.emit('join_channel', {
+                    channel: channelName,
+                    username: this.currentUsername
+                });
             }
 
             switchToDM(username) {
@@ -1049,6 +1159,7 @@
                         isOwn: true
                     });
 
+                    // Display message (server will broadcast back for consistency)
                     this.displayMessage(this.currentUsername, message, timestamp, true);
                 } else {
                     // Send public message
@@ -1059,19 +1170,8 @@
                         timestamp: timestamp
                     });
 
-                    // Save to channel history
-                    const channelKey = `${this.currentServer}_${this.currentChannel}`;
-                    if (!this.messageHistory[channelKey]) {
-                        this.messageHistory[channelKey] = [];
-                    }
-                    this.messageHistory[channelKey].push({
-                        username: this.currentUsername,
-                        message,
-                        timestamp,
-                        isOwn: true
-                    });
-
-                    this.displayMessage(this.currentUsername, message, timestamp, true);
+                    // Don't display locally - let server broadcast handle it to avoid duplicates
+                    // Server will send back via 'receive_message' event
                 }
 
                 this.chatInput.value = '';
@@ -1343,15 +1443,6 @@
             console.log('DOM loaded, initializing chat app');
             window.chatApp = new DiscordLikeChat();
         });
-
-        // Also try to initialize immediately in case DOMContentLoaded already fired
-        if (document.readyState === 'loading') {
-            // DOM not ready yet
-        } else {
-            // DOM already loaded
-            console.log('DOM already loaded, initializing immediately');
-            window.chatApp = new DiscordLikeChat();
-        }
     </script>
 </body>
 

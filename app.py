@@ -54,24 +54,84 @@ def handle_disconnect():
     # User list update karo
     update_user_list()
 
+# Channel join karne ke liye event
+# Networking Layer 7: Users ko specific channels mein add karna
+@socketio.on('join_channel')
+def handle_join_channel(data):
+    channel = data.get('channel', 'general')
+    username = data.get('username', 'Anonymous')
+
+    # User ko channel room mein add karo
+    room_name = f'channel_{channel}'
+    join_room(room_name)
+
+    # User ki username update karo
+    user_id = request.sid
+    users[user_id] = username
+
+    # User list update karo
+    update_user_list()
+
+# Login system add kar rahe hain
+# Networking Layer 7: User authentication
+@socketio.on('login')
+def handle_login(data):
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+
+    # Simple authentication - in real app, use proper database
+    if not username:
+        emit('login_response', {'success': False, 'message': 'Username required'})
+        return
+
+    # Check if username already taken
+    for sid, existing_user in users.items():
+        if existing_user == username and sid != request.sid:
+            emit('login_response', {'success': False, 'message': 'Username already taken'})
+            return
+
+    # Login successful
+    user_id = request.sid
+    users[user_id] = username
+
+    emit('login_response', {
+        'success': True,
+        'username': username,
+        'message': f'Welcome {username}!'
+    })
+
+    # Notify others
+    emit('user_joined', {'username': username}, broadcast=True, include_self=False)
+    update_user_list()
+
 # SocketIO event for message send karne ke liye
 # Networking Layer 7: Application protocol ke through message exchange
 # Layer 4: Underlying TCP ensures message reliably deliver hota hai
 @socketio.on('send_message')
 def handle_message(data):
-    # Data se username aur message extract kar rahe hain
+    # Data se username, message aur channel extract kar rahe hain
     username = data.get('username', 'Anonymous')
     message = data.get('message', '')
+    channel = data.get('channel', 'general')
     timestamp = data.get('timestamp', '')
+
     # User ki username update kar rahe hain agar change hui ho
     user_id = request.sid
     users[user_id] = username
-    # Message ko sabko broadcast kar rahe hain with timestamp
+
+    # Channel-specific room banao
+    room_name = f'channel_{channel}'
+
+    # User ko channel room mein add karo
+    join_room(room_name)
+
+    # Message ko sirf us channel ke users ko broadcast karo
     emit('receive_message', {
         'username': username,
         'message': message,
+        'channel': channel,
         'timestamp': timestamp
-    }, broadcast=True)
+    }, room=room_name)
 
 # Typing indicator events
 # Networking Layer 7: Real-time typing status broadcast karna
