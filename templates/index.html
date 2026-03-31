@@ -488,8 +488,7 @@
                 this.messageHistory = {};
                 this.settings = {
                     theme: localStorage.getItem('theme') || 'dark',
-                    notifications: true,
-                    soundEnabled: true
+                    notifications: true
                 };
                 this.isTyping = false;
                 this.typingTimeout = null;
@@ -846,19 +845,6 @@
                     notifGroup.appendChild(notifCheckbox);
                     body.appendChild(notifGroup);
 
-                    // Sound setting
-                    const soundGroup = this.createElement('div', { className: 'setting-group' });
-                    const soundLabel = this.createElement('label', { className: 'setting-label' });
-                    soundLabel.textContent = 'Enable Sound';
-                    const soundCheckbox = this.createElement('input', {
-                        type: 'checkbox',
-                        checked: this.settings.soundEnabled,
-                        onchange: (e) => this.settings.soundEnabled = e.target.checked
-                    });
-                    soundGroup.appendChild(soundLabel);
-                    soundGroup.appendChild(soundCheckbox);
-                    body.appendChild(soundGroup);
-
                     content.appendChild(body);
                     panel.appendChild(content);
 
@@ -883,7 +869,6 @@
                 this.socket.on('user_joined', (data) => {
                     console.log('User joined:', data.username);
                     this.displayNotification(`${data.username} joined the server`);
-                    if (this.settings.soundEnabled) this.playNotificationSound();
                 });
 
                 // User left
@@ -896,8 +881,8 @@
                 this.socket.on('receive_message', (data) => {
                     console.log('Received message:', data);
                     this.displayMessage(data.username, data.message, data.timestamp);
-                    if (this.settings.notifications && this.settings.soundEnabled) {
-                        this.playNotificationSound();
+                    if (this.settings.notifications) {
+                        // Notification without sound
                     }
                 });
 
@@ -953,8 +938,6 @@
                 if (this.currentServer === 'dms' && this.currentChannel === from) {
                     this.displayMessage(from, message, timestamp);
                 }
-
-                if (this.settings.soundEnabled) this.playNotificationSound();
             }
 
             // Server and channel switching
@@ -1351,30 +1334,6 @@
                 const savedServers = localStorage.getItem('lanSaturn_servers');
                 if (savedServers) {
                     this.servers = { ...this.servers, ...JSON.parse(savedServers) };
-                }
-            }
-
-            // Sound notification
-            playNotificationSound() {
-                try {
-                    // Create a simple beep sound using Web Audio API
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-
-                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-
-                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.2);
-                } catch (error) {
-                    console.log('Sound notification failed:', error);
                 }
             }
         }

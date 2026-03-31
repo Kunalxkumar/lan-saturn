@@ -47,7 +47,6 @@ function App() {
                 timestamp: new Date().toISOString()
             };
             setMessages(prev => [...prev, notification]);
-            playNotificationSound();
         });
 
         // User left event
@@ -73,7 +72,6 @@ function App() {
             };
             setMessages(prev => [...prev, message]);
             saveMessageToHistory(message);
-            playNotificationSound();
         });
 
         // Typing indicators
@@ -104,7 +102,6 @@ function App() {
                 isOwn: false
             };
             setMessages(prev => [...prev, fileMessage]);
-            playNotificationSound();
         });
 
         // Message reactions
@@ -124,7 +121,6 @@ function App() {
                 isPrivate: true
             };
             setMessages(prev => [...prev, privateMsg]);
-            playNotificationSound();
         });
 
         // Cleanup on unmount
@@ -160,29 +156,6 @@ function App() {
         setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
-    };
-
-    // Play notification sound using Web Audio API
-    const playNotificationSound = () => {
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.2);
-        } catch (e) {
-            // Fallback: no sound if Web Audio API not supported
-        }
     };
 
     // Send message function

@@ -9,7 +9,6 @@ A **Discord-inspired LAN chat application** for offline Wi-Fi/Hotspot use. Perfe
 - **User Management** - Join/leave notifications and live member lists
 - **Rich Text Formatting** - Support for **bold**, *italic*, and `code` text
 - **Typing Indicators** - See when others are typing
-- **Sound Notifications** - Audio feedback for new messages
 - **Settings Panel** - Customize username, theme, and preferences
 - **Local Network Access** - Works on `0.0.0.0:5000` for hotspot sharing
 - **Educational Comments** - Hinglish explanations of networking concepts (Layer 4/7)
