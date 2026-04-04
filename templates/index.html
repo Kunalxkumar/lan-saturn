@@ -541,7 +541,8 @@
             }
 
             .chat-input {
-                font-size: 16px; /* Prevents zoom on iOS */
+                font-size: 16px;
+                /* Prevents zoom on iOS */
                 padding: 10px 12px;
                 min-height: 40px;
             }
@@ -566,7 +567,8 @@
             .channel-item,
             .member-item,
             .server-icon {
-                min-height: 44px; /* iOS touch target minimum */
+                min-height: 44px;
+                /* iOS touch target minimum */
                 padding: 8px;
             }
 
@@ -627,6 +629,7 @@
 
         /* Hide desktop elements on mobile */
         @media (min-width: 769px) {
+
             .mobile-menu-btn,
             .mobile-members-btn,
             .sidebar-overlay {
@@ -744,9 +747,6 @@
                     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #36393f; color: white;">
                         <div class="login-container" style="background: #2f3136; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); width: 100%; max-width: 400px;">
                             <h1 style="text-align: center; margin-bottom: 30px; color: #5865f2;">LAN Saturn</h1>
-                            <h2 style="text-align: center; margin-bottom: 20px; font-size: 18px;">Join the Chat</h2>
-                            <h1 style="text-align: center; margin-bottom: 30px; color: #5865f2;">LAN Saturn</h1>
-                            <h2 style="text-align: center; margin-bottom: 20px; font-size: 18px;">Join the Chat</h2>
 
                             <div style="margin-bottom: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Username</label>
@@ -932,7 +932,7 @@
                     channelsList.appendChild(textCategory);
 
                     // Add default channels
-                    ['general', 'random', 'tech'].forEach(channel => {
+                    ['general'].forEach(channel => {
                         channelsList.appendChild(this.createChannelItem(channel, 'text'));
                     });
 
