@@ -4,18 +4,6 @@ A simple LAN-based chat app inspired by Discord. Built mainly for use over Wi-Fi
 
 ---
 
-## Features
-
-* real-time messaging using websockets
-* clean UI inspired by discord (servers, channels, DMs)
-* shows who joined/left the chat
-* basic text formatting (bold, italic, code)
-* typing indicator
-* simple settings (username, theme, etc.)
-* works on local network (0.0.0.0:5000)
-
----
-
 ## Setup
 
 ### Requirements
