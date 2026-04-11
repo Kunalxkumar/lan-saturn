@@ -1,3 +1,6 @@
+/******/ (() => { // webpackBootstrap
+/******/ 	var __webpack_modules__ = ({
+
 /***/ "./src/App.js"
 /*!********************!*\
   !*** ./src/App.js ***!
