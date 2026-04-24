@@ -111,4 +111,4 @@ this project was built mainly to understand:
 ---
 
 
-made for learning and small LAN setups
+made for learning and small LAN setups.
