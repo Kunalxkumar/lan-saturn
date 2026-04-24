@@ -1,23 +1,34 @@
-# LAN Saturn
+<h1 align="center">🪐 LAN Saturn</h1>
 
-A simple LAN-based chat app inspired by Discord. Built mainly for use over Wi-Fi/hotspot when there’s no internet. Works well for small groups like friends, study sessions, or local gaming setups.
+<p align="center">
+  <strong>A Discord-inspired, LAN-based real-time chat application with End-to-End Encryption (E2EE).</strong>
+</p>
 
----
-
-## Setup
-
-### Requirements
-
-* python 3.7+
-* node.js
-* browser
+LAN Saturn is built specifically for local networks (Wi-Fi or Mobile Hotspots) when there is no active internet connection. It is perfect for small groups, study sessions, or local offline gaming setups where you need reliable, fast, and secure communication.
 
 ---
+
+## ✨ Features
+
+* **Real-Time Messaging**: Lightning-fast bidrectional communication powered by WebSockets.
+* **End-to-End Encryption (E2EE)**: Messages and files are securely encrypted using `libsodium` (XChaCha20-Poly1305) with a shared passphrase.
+* **Channels & DMs**: Switch between public channels (e.g., `#general`, `#study`) or send Private Direct Messages to specific users.
+* **File Sharing**: Securely upload, encrypt, and share files (up to 50MB) across the local network.
+* **Live User Presence**: See who is currently online and active in the network.
+* **Typing Indicators**: Real-time "user is typing..." feedback.
+* **Discord-like UI**: Familiar, responsive interface with Dark and Light mode support.
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+* **Python 3.7+** (For the Flask backend)
+* **Node.js & npm** (For building the React frontend)
+* A modern web browser
 
 ### Installation
 
-clone the repo:
-
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 cd lan-saturn
