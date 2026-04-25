@@ -1,4 +1,9 @@
-
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # IDE files
 .vscode/
