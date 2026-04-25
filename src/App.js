@@ -351,6 +351,25 @@ function App() {
         });
     };
 
+    const clearHistory = () => {
+        const confirmed = window.confirm('Clear all saved chat history on this device?');
+        if (!confirmed) {
+            return;
+        }
+
+        messages.forEach(message => {
+            if (message.decryptedUrl) {
+                URL.revokeObjectURL(message.decryptedUrl);
+            }
+        });
+
+        setMessages([]);
+        localStorage.removeItem('lanSaturn_messages');
+        setSearchQuery('');
+        setUploadStatus('Chat history cleared from this device.');
+        setTimeout(() => setUploadStatus(''), 3000);
+    };
+
     const sendMessage = async (message) => {
         const cleanMessage = message.trim();
         if (!cleanMessage || !currentUsername) return;
@@ -755,7 +774,16 @@ function App() {
                         <h1>{title}</h1>
                         <p>{activeView === 'dm' ? 'Private conversation' : `${activeServer.name} channel`}</p>
                     </div>
-                    <SearchBar value={searchQuery} onChange={setSearchQuery} />
+                    <div className="chat-topbar-actions">
+                        <SearchBar value={searchQuery} onChange={setSearchQuery} />
+                        <button
+                            type="button"
+                            className="clear-history-button"
+                            onClick={clearHistory}
+                        >
+                            Clear History
+                        </button>
+                    </div>
                 </header>
 
                 <div className="encryption-strip">

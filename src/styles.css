@@ -239,6 +239,14 @@ button {
     padding: 0 18px;
 }
 
+.chat-topbar-actions {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+    min-width: 0;
+}
+
 .chat-topbar h1 {
     color: #f2f3f5;
     font-size: 18px;
@@ -253,9 +261,25 @@ button {
 }
 
 .search-container {
-    margin-left: auto;
     max-width: 280px;
     width: 35%;
+}
+
+.clear-history-button {
+    background: #f23f43;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 800;
+    height: 34px;
+    padding: 0 14px;
+    white-space: nowrap;
+}
+
+.clear-history-button:hover {
+    background: #d83a3e;
 }
 
 .search-input {
@@ -721,9 +745,18 @@ button {
         padding: 12px;
     }
 
-    .search-container {
+    .chat-topbar-actions {
+        flex-direction: column;
         margin-left: 0;
+        width: 100%;
+    }
+
+    .search-container {
         max-width: none;
+        width: 100%;
+    }
+
+    .clear-history-button {
         width: 100%;
     }
 
