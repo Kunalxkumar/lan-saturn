@@ -1,5 +1,5 @@
 {
-    
+    "name": "lan-saturn-react",
     "version": "1.0.0",
     "description": "LAN Saturn - Local Chat App with React",
     "main": "src/index.js",
