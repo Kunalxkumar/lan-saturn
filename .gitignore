@@ -36,3 +36,15 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# Build Artifacts
+build/
+dist/
+uploads/
+graphify-out/
+*.spec
+src-tauri/target/
+src-tauri/binaries/
+app/static/js/bundle.js
+app/static/js/bundle.js.map
+app/static/js/bundle.js.LICENSE.txt

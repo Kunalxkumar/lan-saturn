@@ -1,1 +1,0 @@
-{"nodes": [{"id": "src_messageinput", "label": "Message Input Component", "file_type": "code", "source_file": "src/components/MessageInput.js"}], "edges": [{"source": "src_messageinput", "target": "app_upload_file", "relation": "calls", "confidence": "INFERRED", "confidence_score": 0.8, "source_file": "src/components/MessageInput.js"}], "hyperedges": []}

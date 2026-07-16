@@ -1,1 +1,0 @@
-{"nodes": [{"id": "tauri_conf", "label": "Tauri Desktop Config", "file_type": "document", "source_file": "src-tauri/tauri.conf.json"}], "edges": [{"source": "tauri_conf", "target": "app_py", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "src-tauri/tauri.conf.json"}], "hyperedges": []}

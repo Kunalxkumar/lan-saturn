@@ -1,1 +1,0 @@
-{"nodes": [{"id": "webpack_config", "label": "Webpack Bundler Config", "file_type": "code", "source_file": "webpack.config.js"}], "edges": [{"source": "webpack_config", "target": "src_app", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.9, "source_file": "webpack.config.js"}], "hyperedges": []}
