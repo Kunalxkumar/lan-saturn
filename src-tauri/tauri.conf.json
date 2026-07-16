@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "lan-saturn",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.lansaturn.app",
   "build": {
     "frontendDist": "http://127.0.0.1:5000",
     "devUrl": "http://127.0.0.1:5000",

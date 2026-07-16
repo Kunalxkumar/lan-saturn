@@ -2,6 +2,7 @@
     "name": "lan-saturn-react",
     "version": "1.0.0",
     "description": "LAN Saturn - Local Chat App with React",
+    "type": "module",
     "main": "src/index.js",
     "scripts": {
         "build": "vite build",
@@ -9,6 +10,7 @@
         "start": "npm run dev"
     },
     "dependencies": {
+        "@tailwindcss/postcss": "^4.3.3",
         "@types/dompurify": "^3.0.5",
         "@types/marked": "^5.0.2",
         "dompurify": "^3.4.12",
