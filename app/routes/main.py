@@ -29,3 +29,11 @@ def lan_info():
         'urls': get_lan_urls(),
         'port': PORT
     }
+
+@main_bp.route('/api/discover')
+def api_discover():
+    from app.services.discovery import discovery_service
+    return {
+        'success': True,
+        'servers': discovery_service.get_servers()
+    }

@@ -10,6 +10,14 @@ from app.repositories.chat_repo import ChatRepository
 shared_dir_bp = Blueprint('shared_dir', __name__)
 chat_repo = ChatRepository()
 
+def is_safe_subpath(base_dir: str, target_path: str) -> bool:
+    try:
+        real_base = os.path.realpath(base_dir)
+        real_target = os.path.realpath(target_path)
+        return os.path.commonpath([real_base, real_target]) == real_base
+    except Exception:
+        return False
+
 @shared_dir_bp.route('/api/shared-directory/config', methods=['POST'])
 def set_shared_directory():
     try:
@@ -44,7 +52,7 @@ def list_shared_directory_files():
     target_dir = os.path.abspath(os.path.join(shared_directory, subpath))
 
     # Safely restrict access to the shared root directory only
-    if not target_dir.startswith(os.path.abspath(shared_directory)):
+    if not is_safe_subpath(shared_directory, target_dir):
         return jsonify({'success': False, 'error': 'Access denied'}), 403
 
     if not os.path.exists(target_dir) or not os.path.isdir(target_dir):
@@ -74,7 +82,7 @@ def download_shared_file():
     target_file = os.path.abspath(os.path.join(shared_directory, filepath))
 
     # Directory traversal prevention
-    if not target_file.startswith(os.path.abspath(shared_directory)):
+    if not is_safe_subpath(shared_directory, target_file):
         return jsonify({'success': False, 'error': 'Access denied'}), 403
 
     if not os.path.exists(target_file) or os.path.isdir(target_file):

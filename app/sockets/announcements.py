@@ -36,12 +36,7 @@ class AnnouncementRepository:
         with db_manager.get_connection() as conn:
             cursor = conn.execute("SELECT * FROM announcements ORDER BY timestamp DESC")
             rows = cursor.fetchall()
-            return [
-                Announcement(
-                    id=row['id'], text=row['text'], username=row['username'], timestamp=row['timestamp']
-                )
-                for row in rows
-            ]
+            return [Announcement.from_row(row) for row in rows]
 
 ann_repo = AnnouncementRepository()
 

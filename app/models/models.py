@@ -32,6 +32,16 @@ class Task:
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
+    @classmethod
+    def from_row(cls, row: Any) -> 'Task':
+        return cls(
+            id=row['id'],
+            channel=row['channel'],
+            text=row['text'],
+            done=bool(row['done']),
+            creator=row['creator']
+        )
+
 @dataclass
 class Poll:
     id: str
@@ -55,6 +65,15 @@ class Announcement:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+    @classmethod
+    def from_row(cls, row: Any) -> 'Announcement':
+        return cls(
+            id=row['id'],
+            text=row['text'],
+            username=row['username'],
+            timestamp=row['timestamp']
+        )
 
 @dataclass
 class TransferItem:

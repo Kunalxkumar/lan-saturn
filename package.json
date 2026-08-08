@@ -3,10 +3,10 @@
     "version": "1.0.0",
     "description": "LAN Saturn - Local Chat App with React",
     "type": "module",
-    "main": "src/index.js",
+    "main": "src/index.tsx",
     "scripts": {
         "build": "vite build",
-        "dev": "concurrently \"vite build --watch\" \"python run.py\"",
+        "dev": "concurrently \"vite\" \"python run.py\"",
         "start": "npm run dev"
     },
     "dependencies": {
@@ -24,23 +24,15 @@
         "zustand": "^5.0.14"
     },
     "devDependencies": {
-        "@babel/core": "^7.22.0",
-        "@babel/preset-env": "^7.22.0",
-        "@babel/preset-react": "^7.22.0",
         "@tauri-apps/cli": "^2.11.4",
         "@types/react": "^19.2.17",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^6.0.3",
         "autoprefixer": "^10.5.4",
-        "babel-loader": "^9.1.0",
         "concurrently": "^10.0.3",
-        "css-loader": "^6.8.0",
         "postcss": "^8.5.19",
-        "style-loader": "^3.3.0",
         "tailwindcss": "^4.3.3",
         "typescript": "^7.0.2",
-        "vite": "^8.1.5",
-        "webpack": "^5.106.2",
-        "webpack-cli": "^5.1.4"
+        "vite": "^8.1.5"
     }
 }

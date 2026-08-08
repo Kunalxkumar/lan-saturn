@@ -30,4 +30,9 @@ def create_app(config_class=Config) -> Flask:
     # Register central error management
     register_error_handlers(flask_app)
 
+    from app.services.discovery import discovery_service
+    # Only start discovery if not testing to avoid threading issues in tests
+    if not flask_app.config.get('TESTING'):
+        discovery_service.start()
+
     return flask_app

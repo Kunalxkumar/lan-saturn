@@ -49,3 +49,6 @@ app/static/js/bundle.js
 app/static/js/bundle.js.map
 app/static/js/bundle.js.LICENSE.txt
 *.exe
+*.msi
+installers/
+notes/

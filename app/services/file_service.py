@@ -9,6 +9,9 @@ from app.config import Config
 from app.models.models import TransferItem
 from app.repositories.chat_repo import ChatRepository
 
+MAX_ZIP_ENTRIES = 2000
+MAX_FILENAME_LEN = 255
+
 class FileService:
     def __init__(self, chat_repo: Optional[ChatRepository] = None):
         self.chat_repo = chat_repo or ChatRepository()
@@ -56,11 +59,15 @@ class FileService:
             raise FileNotFoundError("Not a valid zip file")
 
         with zipfile.ZipFile(file_path, "r") as z:
+            info_list = z.infolist()
+            if len(info_list) > MAX_ZIP_ENTRIES:
+                raise ValueError(f"ZIP archive exceeds maximum entry limit of {MAX_ZIP_ENTRIES}")
+
             return [
                 {
-                    "name": info.filename,
+                    "name": info.filename[:MAX_FILENAME_LEN],
                     "size": info.file_size,
                     "is_dir": info.is_dir()
                 }
-                for info in z.infolist()
+                for info in info_list
             ]

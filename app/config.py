@@ -1,5 +1,6 @@
 import os
 import sys
+import secrets
 from app.constants import MAX_UPLOAD_SIZE
 
 if getattr(sys, 'frozen', False):
@@ -10,7 +11,7 @@ else:
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'lan-saturn-secret-key-12984')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
     NOTES_FOLDER = os.path.join(BASE_DIR, 'notes')
     MAX_CONTENT_LENGTH = MAX_UPLOAD_SIZE

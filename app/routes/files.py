@@ -20,7 +20,8 @@ def upload_file():
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.exception("File upload failed")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 @files_bp.route('/files/<filename>')
 def serve_file(filename):
@@ -39,7 +40,8 @@ def zip_preview(filename):
     try:
         contents = file_service.get_zip_contents(filename)
         return jsonify({'success': True, 'files': contents})
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.exception("ZIP preview failed")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500

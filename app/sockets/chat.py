@@ -42,36 +42,40 @@ def handle_disconnect():
 
 @socketio.on('join_channel')
 def handle_join_channel(data):
-    channel = data.get('channel', 'general')
-    username = data.get('username', f'User-{request.sid[:4]}')
-    password = data.get('password', '').strip()
-    invite_code = data.get('inviteCode', '').strip()
-    sid = request.sid
+    try:
+        data = data or {}
+        channel = data.get('channel', 'general')
+        username = data.get('username', f'User-{request.sid[:4]}')
+        password = data.get('password', '').strip()
+        invite_code = data.get('inviteCode', '').strip()
+        sid = request.sid
 
-    # Enforce password / invite check if channel is locked
-    if security_repo.is_channel_locked(channel):
-        is_valid = False
-        if invite_code:
-            is_valid = security_repo.validate_invite_code(invite_code, channel)
-        if not is_valid and password:
-            is_valid = security_repo.verify_channel_password(channel, password)
-        
-        if not is_valid:
-            emit('password_required', {'channel': channel}, to=sid)
-            return
+        # Enforce password / invite check if channel is locked
+        if security_repo.is_channel_locked(channel):
+            is_valid = False
+            if invite_code:
+                is_valid = security_repo.validate_invite_code(invite_code, channel)
+            if not is_valid and password:
+                is_valid = security_repo.verify_channel_password(channel, password)
+            
+            if not is_valid:
+                emit('password_required', {'channel': channel})
+                return
 
-    state_manager.set_user(sid, username)
+        state_manager.set_user(sid, username)
 
-    room_name = f'channel_{channel}'
-    join_room(room_name)
-    update_user_list()
+        room_name = f'channel_{channel}'
+        join_room(room_name)
+        update_user_list()
 
-    # Load from SQLite database and seed to client on room enter
-    history = chat_repo.get_messages(channel)
-    emit('messages_history', {
-        'channel': channel,
-        'messages': [msg.to_dict() for msg in history]
-    }, to=sid)
+        # Load from SQLite database and seed to client on room enter
+        history = chat_repo.get_messages(channel)
+        emit('messages_history', {
+            'channel': channel,
+            'messages': [msg.to_dict() for msg in history]
+        })
+    except Exception as exc:
+        print("ERROR in handle_join_channel:", exc)
 
 @socketio.on('send_message')
 def handle_message(data):
