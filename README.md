@@ -28,29 +28,29 @@ LAN Saturn is designed for fully offline local networks (Wi-Fi or Mobile Hotspot
 
 ```mermaid
 graph TD
-    subgraph Client A (Browser/Tauri)
-        A1[React UI] --> A2[libsodium E2EE Module]
-        A2 --> A3[Socket.IO Client]
-        A1 --> A4[Ed25519 Keypair]
+    subgraph client_a ["Client A (Browser/Tauri)"]
+        A1["React UI"] --> A2["libsodium E2EE Module"]
+        A2 --> A3["Socket.IO Client"]
+        A1 --> A4["Ed25519 Keypair"]
     end
 
-    subgraph Client B (Browser/Tauri)
-        B1[React UI] --> B2[libsodium E2EE Module]
-        B2 --> B3[Socket.IO Client]
-        B1 --> B4[Ed25519 Keypair]
+    subgraph client_b ["Client B (Browser/Tauri)"]
+        B1["React UI"] --> B2["libsodium E2EE Module"]
+        B2 --> B3["Socket.IO Client"]
+        B1 --> B4["Ed25519 Keypair"]
     end
 
-    subgraph Server (Flask)
-        S1[UDP Broadcast Discovery]
-        S2[Socket.IO Server]
-        S3[SQLite State Manager]
-        S4[Chunked File Upload API]
+    subgraph server ["Server (Flask)"]
+        S1["UDP Broadcast Discovery"]
+        S2["Socket.IO Server"]
+        S3["SQLite State Manager"]
+        S4["Chunked File Upload API"]
     end
 
-    A3 -- WebSocket (Encrypted Payload) --> S2
-    S2 -- Broadcast --> B3
-    S1 -. UDP Broadcast (Port 5001) .-> A1
-    A4 -. Device Signature Check .-> S2
+    A3 -- "WebSocket (Encrypted Payload)" --> S2
+    S2 -- "Broadcast" --> B3
+    S1 -. "UDP Broadcast (Port 5001)" .-> A1
+    A4 -. "Device Signature Check" .-> S2
 ```
 
 ## 🔐 Security Flow
