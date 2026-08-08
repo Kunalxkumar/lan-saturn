@@ -121,4 +121,15 @@ pytest -v tests/
 * **Cryptography**: `libsodium-wrappers`
 
 ---
+
+## 🙏 Acknowledgements & Credits
+
+Special thanks to the creators and maintainers of **[libsodium](https://github.com/jedisct1/libsodium)** and **[libsodium-wrappers](https://github.com/jedisct1/libsodium.js)**. 
+
+LAN Saturn relies directly on libsodium for all client-side End-to-End Encryption (E2EE) and cryptographic identity features, including:
+- **XChaCha20-Poly1305** authenticated symmetric encryption (`crypto_aead_xchacha20poly1305_ietf`).
+- **Argon2id** key derivation (`crypto_pwhash`).
+- **Ed25519** digital signatures (`crypto_sign`).
+
+---
 *Built for fully offline, secure collaboration.*
