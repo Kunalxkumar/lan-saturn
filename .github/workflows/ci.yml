@@ -34,5 +34,5 @@ jobs:
 
       - name: Install Frontend dependencies & Build
         run: |
-          npm ci
+          npm install
           npm run build
