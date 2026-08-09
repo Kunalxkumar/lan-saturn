@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Search } from 'lucide-react';
 
 /**
  * SmartSearch — rich search overlay with filter syntax.
@@ -160,13 +161,15 @@ export default function SmartSearch({ messages, searchQuery, onSearchChange }) {
     if (filters.after) scopePills.push(`after:${filters.after}`);
 
     return (
-        <div className="smart-search" ref={overlayRef}>
-            <div className="search-container">
+        <div className="smart-search relative" ref={overlayRef}>
+            <div className="search-container relative flex items-center">
+                <Search size={14} className="absolute left-3 text-gray-400 pointer-events-none" />
                 <input
                     ref={inputRef}
                     type="text"
-                    className="search-input"
-                    placeholder="Search... (from: in: has: type: before: after:)"
+                    className="search-input w-52 sm:w-60 md:w-64 focus:w-80 transition-all duration-200 bg-slate-800/80 border border-white/10 rounded-full pl-8 pr-3 py-1.5 text-xs text-gray-200 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    placeholder="Search messages..."
+                    title="Filters: from: in: has: type: before: after:"
                     value={searchQuery}
                     onChange={(e) => {
                         onSearchChange(e.target.value);

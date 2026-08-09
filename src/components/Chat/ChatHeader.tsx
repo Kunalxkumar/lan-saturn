@@ -35,9 +35,9 @@ export default function ChatHeader({
                     <Bell size={20} />
                 </button>
                 
-                <div className="relative w-64">
+                <div className="relative">
                     <SmartSearch 
-                        messages={[]} // Handled in App.tsx typically, or we move it here. For UI, we keep the component wrapper.
+                        messages={[]}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                     />
