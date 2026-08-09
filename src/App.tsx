@@ -457,6 +457,7 @@ function App() {
                         setSearchQuery={setSearchQuery}
                         isEncrypted={isEncrypted}
                         cryptoReady={cryptoReady}
+                        users={users}
                     />
 
                     {activeView === 'notes' ? (

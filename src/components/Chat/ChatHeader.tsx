@@ -8,11 +8,15 @@ export default function ChatHeader({
     searchQuery, 
     setSearchQuery, 
     isEncrypted, 
-    cryptoReady 
+    cryptoReady,
+    users = []
 }) {
     if (activeView !== 'server' && activeView !== 'dm') {
         return null;
     }
+
+    const visibleUsers = Array.isArray(users) ? users.slice(0, 3) : [];
+    const overflowCount = Array.isArray(users) && users.length > 3 ? users.length - 3 : 0;
 
     return (
         <header className="h-12 border-b border-[#30363d] flex items-center px-4 bg-[#10141a] shrink-0">
@@ -29,11 +33,29 @@ export default function ChatHeader({
                     </div>
                 )}
                 
-                <div className="flex -space-x-1.5 mr-1 hidden lg:flex items-center">
-                    <div className="w-5 h-5 rounded-full border border-[#0D1117] bg-[#5865f2] text-white flex items-center justify-center text-[9px] font-bold z-30">A</div>
-                    <div className="w-5 h-5 rounded-full border border-[#0D1117] bg-purple-600 text-white flex items-center justify-center text-[9px] font-bold z-20">B</div>
-                    <div className="w-5 h-5 rounded-full border border-[#0D1117] bg-[#262a31] flex items-center justify-center text-[9px] font-mono z-0 text-gray-400">+12</div>
-                </div>
+                {visibleUsers.length > 0 && (
+                    <div className="flex -space-x-1.5 mr-1 hidden sm:flex items-center" title={`Online: ${visibleUsers.map(u => (typeof u === 'object' ? u.username : u)).join(', ')}`}>
+                        {visibleUsers.map((u, i) => {
+                            const name = typeof u === 'object' ? u.username || 'Anonymous' : u;
+                            const initial = name.charAt(0).toUpperCase();
+                            const bgColors = ['bg-indigo-600', 'bg-purple-600', 'bg-emerald-600', 'bg-amber-600'];
+                            const bg = bgColors[i % bgColors.length];
+                            return (
+                                <div 
+                                    key={i} 
+                                    className={`w-6 h-6 rounded-full border-2 border-[#10141a] ${bg} text-white flex items-center justify-center text-[10px] font-bold shadow-sm`}
+                                >
+                                    {initial}
+                                </div>
+                            );
+                        })}
+                        {overflowCount > 0 && (
+                            <div className="w-6 h-6 rounded-full border-2 border-[#10141a] bg-[#262a31] text-gray-300 flex items-center justify-center text-[9px] font-mono font-bold">
+                                +{overflowCount}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <button className="text-gray-400 hover:text-gray-200 transition-colors p-1 rounded-md hover:bg-[#181c22]" title="Pin Message">
                     <Pin size={16} />
