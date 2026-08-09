@@ -1,34 +1,33 @@
 import React from 'react';
-import { BookOpen, Globe, Clipboard, Calendar as CalendarIcon, Shield, FolderClock } from 'lucide-react';
+import { BookOpen, Globe, Clipboard, Calendar as CalendarIcon, Shield } from 'lucide-react';
 
 const TOOLS = [
-    { id: 'notes', label: 'Notes', icon: BookOpen },
-    { id: 'filebrowser', label: 'Browser', icon: Globe },
-    { id: 'clipboardsync', label: 'Clipboard', icon: Clipboard },
-    { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
-    { id: 'security', label: 'Security', icon: Shield }
+    { id: 'notes', label: 'Notes', Icon: BookOpen },
+    { id: 'filebrowser', label: 'Browser', Icon: Globe },
+    { id: 'clipboardsync', label: 'Clipboard', Icon: Clipboard },
+    { id: 'calendar', label: 'Calendar', Icon: CalendarIcon },
+    { id: 'security', label: 'Security', Icon: Shield }
 ];
 
 export default function ToolList({ activeView, setActiveView }) {
     return (
-        <div className="sidebar-section px-4 py-3 flex flex-col gap-2">
-            <h3 className="sidebar-section-label text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Tools</h3>
-            <div className="tool-grid flex flex-col gap-1">
-                {TOOLS.map((tool) => {
-                    const Icon = tool.icon;
-                    const isActive = activeView === tool.id;
+        <div className="mt-4">
+            <div className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider mb-1.5 px-2">Tools</div>
+            <div className="space-y-0.5">
+                {TOOLS.map(({ id, label, Icon }) => {
+                    const isActive = activeView === id;
                     return (
                         <button
-                            key={tool.id}
-                            className={`tool-card flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all text-left ${
+                            key={id}
+                            className={`flex items-center gap-2 w-full rounded-md px-2.5 py-1.5 text-xs transition-all text-left ${
                                 isActive 
-                                    ? 'active bg-indigo-600/20 text-indigo-400 font-semibold' 
+                                    ? 'bg-indigo-600/20 text-indigo-300 font-semibold border-l-2 border-indigo-500' 
                                     : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                             }`}
-                            onClick={() => setActiveView(tool.id)}
+                            onClick={() => setActiveView(id)}
                         >
-                            <Icon size={18} className="tool-icon flex-shrink-0 text-indigo-400" />
-                            <span className="tool-label flex-1 truncate">{tool.label}</span>
+                            <Icon size={15} className={`shrink-0 ${isActive ? 'text-indigo-400' : 'text-gray-400'}`} />
+                            <span className="truncate">{label}</span>
                         </button>
                     );
                 })}

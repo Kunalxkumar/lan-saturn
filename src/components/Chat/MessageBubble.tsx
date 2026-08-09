@@ -82,34 +82,34 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
     const sizeMB = isFile && message.originalSize ? (message.originalSize / (1024 * 1024)).toFixed(2) : null;
 
     return (
-        <div className={`message-bubble ${message.isOwn ? 'own' : ''} ${message.isPrivate ? 'private' : ''}`}>
-            <div className="message-hover-actions">
+        <div className={`message-bubble group relative flex gap-3 p-2.5 rounded-lg hover:bg-surface-container-low transition-colors ${message.isOwn ? 'bg-primary-container/10' : ''} ${message.isPrivate ? 'bg-tertiary-container/15' : ''}`}>
+            <div className="message-hover-actions absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container border border-outline-variant rounded-md shadow-lg flex items-center p-1 gap-1 z-10">
                 {['👍', '❤️', '🔥', '😂'].map(emoji => (
-                    <button key={emoji} className="hover-action-btn" onClick={() => onReact?.(message.id, emoji)}>
+                    <button key={emoji} className="hover-action-btn hover:bg-surface-container-high p-1 rounded transition-colors text-xs" onClick={() => onReact?.(message.id, emoji)}>
                         {emoji}
                     </button>
                 ))}
             </div>
 
-            <div className="message-avatar">
+            <div className="message-avatar w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center font-bold text-sm text-indigo-400 border border-outline-variant shrink-0">
                 {message.username.charAt(0).toUpperCase()}
             </div>
             
-            <div className="message-content-wrapper">
-                <div className="message-header">
-                    <span className="message-username">{message.username}</span>
-                    <span className="message-time">{formatTime(message.timestamp)}</span>
+            <div className="message-content-wrapper flex-1 min-w-0">
+                <div className="message-header flex items-baseline gap-2 mb-1">
+                    <span className="message-username font-semibold text-sm text-on-surface">{message.username}</span>
+                    <span className="message-time text-xs text-on-surface-variant font-mono">{formatTime(message.timestamp)}</span>
                     {message.isEncrypted && (
-                        <span className="message-e2ee-badge" title="End-to-End Encrypted">
+                        <span className="message-e2ee-badge text-emerald-400 flex items-center gap-1 text-[11px]" title="End-to-End Encrypted">
                             <Shield size={12} />
                         </span>
                     )}
-                    {message.isPrivate && <span className="message-private-badge">PRIVATE</span>}
+                    {message.isPrivate && <span className="message-private-badge text-xs bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-bold">PRIVATE</span>}
                 </div>
 
                 {!isFile ? (
                     <div 
-                        className="message-text markdown-body"
+                        className="message-text text-sm text-on-surface leading-relaxed whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
                     />
                 ) : (

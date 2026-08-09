@@ -5,6 +5,8 @@ import MessageComposer from './components/Chat/MessageComposer';
 import Sidebar from './components/Layout/Sidebar/Sidebar';
 import RightPanel from './components/Layout/RightPanel/RightPanel';
 import Layout from './components/Layout/Layout';
+import TopNavBar from './components/Layout/TopNavBar';
+import GlobalSidebar from './components/Layout/GlobalSidebar';
 import JoinChannelModal from './components/Modals/JoinChannelModal';
 import ChatHeader from './components/Chat/ChatHeader';
 import ThemeToggle from './components/ThemeToggle';
@@ -422,96 +424,110 @@ function App() {
     // --- Render ---
 
     return (
-        <Layout theme={theme}>
-            <Sidebar 
-                activeChannel={activeChannel}
-                setActiveChannel={setActiveChannel}
-                activeView={activeView}
-                setActiveView={setActiveView}
-                connectionStatus={connectionStatus}
+        <div className="flex flex-col h-screen w-full bg-[#10141a] text-[#dfe2eb] overflow-hidden antialiased font-sans">
+            <TopNavBar 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
                 currentUsername={currentUsername}
-                setCurrentUsername={setCurrentUsername}
+                connectionStatus={connectionStatus}
             />
 
-            <main className="flex-1 flex flex-col min-w-0 bg-saturn-base relative">
-                <ChatHeader 
+            <div className="flex flex-1 overflow-hidden relative">
+                <GlobalSidebar 
                     activeView={activeView}
-                    activeChannel={activeChannel}
-                    title={title}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    isEncrypted={isEncrypted}
-                    cryptoReady={cryptoReady}
+                    setActiveView={setActiveView}
                 />
 
-                {activeView === 'notes' ? (
-                    <SharedNotes socket={socketRef.current} channel={activeChannel} username={currentUsername} onClose={() => setActiveView('server')} />
-                ) : activeView === 'filebrowser' ? (
-                    <FileBrowser socket={socketRef.current} username={currentUsername} />
-                ) : activeView === 'clipboardsync' ? (
-                    <ClipboardSync socket={socketRef.current} username={currentUsername} />
-                ) : activeView === 'security' ? (
-                    <SecurityPanel socket={socketRef.current} channel={activeChannel} username={currentUsername} encryptionPassphrase={encryptionPassphrase} setEncryptionPassphrase={setEncryptionPassphrase} cryptoReady={cryptoReady} />
-                ) : activeView === 'calendar' ? (
-                    <Calendar socket={socketRef.current} channel={activeChannel} username={currentUsername} />
-                ) : (
-                    <>
-                        <AnnouncementBanner announcements={announcements} onDismiss={dismissAnnouncement} />
-                        <MessageList messages={visibleMessages} searchQuery={searchQuery} messagesEndRef={messagesEndRef} onDecryptFile={decryptFileMessage} onReact={sendReaction} currentUsername={currentUsername} />
+                <Sidebar 
+                    activeChannel={activeChannel}
+                    setActiveChannel={setActiveChannel}
+                    activeView={activeView}
+                    setActiveView={setActiveView}
+                    connectionStatus={connectionStatus}
+                    currentUsername={currentUsername}
+                    setCurrentUsername={setCurrentUsername}
+                />
 
-                        {activeView === 'server' && polls.length > 0 && (
-                            <div className="absolute right-4 top-20 w-80 space-y-4 max-h-[50vh] overflow-y-auto z-10 scrollbar-thin">
-                                {polls.filter(p => !p.closed).map(poll => (
-                                    <Poll key={poll.id} poll={poll} currentUsername={currentUsername} onVote={votePoll} onClose={closePoll} />
-                                ))}
-                            </div>
-                        )}
+                <main className="flex-1 flex flex-col h-full bg-[#0D1117] relative z-0 min-w-0">
+                    <ChatHeader 
+                        activeView={activeView}
+                        activeChannel={activeChannel}
+                        title={title}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        isEncrypted={isEncrypted}
+                        cryptoReady={cryptoReady}
+                    />
 
-                        {isTyping && (
-                            <div className="px-6 py-2 text-sm text-gray-400 italic flex-none animate-pulse">
-                                {typingUser} is typing...
-                            </div>
-                        )}
+                    {activeView === 'notes' ? (
+                        <SharedNotes socket={socketRef.current} channel={activeChannel} username={currentUsername} onClose={() => setActiveView('server')} />
+                    ) : activeView === 'filebrowser' ? (
+                        <FileBrowser socket={socketRef.current} username={currentUsername} />
+                    ) : activeView === 'clipboardsync' ? (
+                        <ClipboardSync socket={socketRef.current} username={currentUsername} />
+                    ) : activeView === 'security' ? (
+                        <SecurityPanel socket={socketRef.current} channel={activeChannel} username={currentUsername} encryptionPassphrase={encryptionPassphrase} setEncryptionPassphrase={setEncryptionPassphrase} cryptoReady={cryptoReady} />
+                    ) : activeView === 'calendar' ? (
+                        <Calendar socket={socketRef.current} channel={activeChannel} username={currentUsername} />
+                    ) : (
+                        <>
+                            <AnnouncementBanner announcements={announcements} onDismiss={dismissAnnouncement} />
+                            <MessageList messages={visibleMessages} searchQuery={searchQuery} messagesEndRef={messagesEndRef} onDecryptFile={decryptFileMessage} onReact={sendReaction} currentUsername={currentUsername} />
 
-                        {composerDisabled ? (
-                            <div className="p-6 text-center text-gray-400 italic bg-saturn-dark border-t border-saturn-light flex-none">
-                                Choose an online user to start a DM.
-                            </div>
-                        ) : (
-                            <div className="flex items-end gap-2 p-4 bg-saturn-base border-t border-saturn-light flex-none relative z-20">
-                                <MessageComposer
-                                    activeChannel={activeChannel}
-                                    onSendMessage={sendMessage}
-                                    onTyping={handleTyping}
-                                    onTypingStop={handleTypingStop}
-                                    onFileUpload={handleFileUpload}
-                                    isUploading={isUploading}
-                                    uploadStatus={uploadStatus}
-                                />
-                                {activeView === 'server' && (
-                                    <button 
-                                        className="h-12 w-12 bg-saturn-light hover:bg-saturn-accentHover text-xl rounded-lg transition-colors flex items-center justify-center shrink-0 border border-gray-600 shadow-md"
-                                        onClick={() => setShowPollModal(true)} 
-                                        title="Create Poll"
-                                    >
-                                        📊
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </>
-                )}
-            </main>
+                            {activeView === 'server' && polls.length > 0 && (
+                                <div className="absolute right-4 top-16 w-80 space-y-4 max-h-[50vh] overflow-y-auto z-10 scrollbar-thin">
+                                    {polls.filter(p => !p.closed).map(poll => (
+                                        <Poll key={poll.id} poll={poll} currentUsername={currentUsername} onVote={votePoll} onClose={closePoll} />
+                                    ))}
+                                </div>
+                            )}
 
-            <RightPanel 
-                users={users}
-                currentUsername={currentUsername}
-                channelTasks={channelTasks}
-                toggleTask={toggleTask}
-                deleteTask={deleteTask}
-                createTask={createTask}
-                activeView={activeView}
-            />
+                            {isTyping && (
+                                <div className="px-6 py-1.5 text-xs text-[#c6c5d7] italic flex-none animate-pulse">
+                                    {typingUser} is typing...
+                                </div>
+                            )}
+
+                            {composerDisabled ? (
+                                <div className="p-6 text-center text-[#c6c5d7] italic bg-[#10141a] border-t border-[#30363d] flex-none">
+                                    Choose an online user to start a DM.
+                                </div>
+                            ) : (
+                                <div className="flex items-end gap-2 p-3 bg-gradient-to-t from-[#0D1117] via-[#0D1117] to-transparent flex-none relative z-20">
+                                    <MessageComposer
+                                        activeChannel={activeChannel}
+                                        onSendMessage={sendMessage}
+                                        onTyping={handleTyping}
+                                        onTypingStop={handleTypingStop}
+                                        onFileUpload={handleFileUpload}
+                                        isUploading={isUploading}
+                                        uploadStatus={uploadStatus}
+                                    />
+                                    {activeView === 'server' && (
+                                        <button 
+                                            className="h-11 w-11 bg-[#181c22] hover:bg-[#5865f2] hover:text-white text-lg rounded-xl transition-colors flex items-center justify-center shrink-0 border border-[#30363d] shadow-md text-[#c6c5d7] cursor-pointer"
+                                            onClick={() => setShowPollModal(true)} 
+                                            title="Create Poll"
+                                        >
+                                            📊
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </main>
+
+                <RightPanel 
+                    users={users}
+                    currentUsername={currentUsername}
+                    channelTasks={channelTasks}
+                    toggleTask={toggleTask}
+                    deleteTask={deleteTask}
+                    createTask={createTask}
+                    activeView={activeView}
+                />
+            </div>
 
             {showPollModal && (
                 <CreatePollModal onSubmit={createPoll} onCancel={() => setShowPollModal(false)} />
@@ -531,7 +547,7 @@ function App() {
                 setActiveChannel={setActiveChannel}
                 handleJoinConfirm={handleJoinConfirm}
             />
-        </Layout>
+        </div>
     );
 }
 
