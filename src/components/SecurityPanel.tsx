@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Shield, Lock, Key, Laptop, Check, X, Copy } from 'lucide-react';
 
 export default function SecurityPanel({ socket, channel, username, encryptionPassphrase, setEncryptionPassphrase, cryptoReady }) {
     const [devices, setDevices] = useState([]);
@@ -8,8 +9,6 @@ export default function SecurityPanel({ socket, channel, username, encryptionPas
 
     useEffect(() => {
         if (!socket) return;
-
-        // Fetch connected devices on mount
         socket.emit('get_device_list');
 
         socket.on('device_list_updated', (data) => {
@@ -70,103 +69,148 @@ export default function SecurityPanel({ socket, channel, username, encryptionPas
         if (ua.includes('Chrome')) return 'Chrome Browser';
         if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari Browser';
         if (ua.includes('Edge')) return 'Edge Browser';
-        if (ua.includes('Postman')) return 'Postman client';
-        return ua.substring(0, 30) + '...';
+        return ua.substring(0, 25) + '...';
     };
 
     return (
-        <div className="security-panel-container">
-            <div className="security-section">
-                <h3>🔐 End-to-End Encryption</h3>
-                <p className="security-desc">Traffic over the LAN is encrypted. You can set a custom key for maximum privacy. If left empty, a default fallback key is used.</p>
-                <div className="lock-input-group">
-                    <input
-                        type="password"
-                        placeholder="Custom E2EE Passphrase..."
-                        value={encryptionPassphrase === 'LAN-SATURN-DEFAULT-KEY' ? '' : encryptionPassphrase}
-                        onChange={e => setEncryptionPassphrase(e.target.value || 'LAN-SATURN-DEFAULT-KEY')}
-                        className="security-input"
-                    />
-                    <span className="security-btn" style={{ background: cryptoReady ? 'rgba(35, 165, 89, 0.16)' : 'rgba(255,255,255,0.1)', color: cryptoReady ? '#5be285' : '#fff', display: 'flex', alignItems: 'center' }}>
-                        {cryptoReady ? 'Active ✅' : 'Initializing...'}
-                    </span>
-                </div>
-            </div>
+        <div className="flex-1 flex flex-col h-full bg-[#0D1117] text-[#dfe2eb] p-6 overflow-y-auto">
+            <div className="max-w-4xl mx-auto w-full space-y-6">
+                {statusMessage && (
+                    <div className="bg-[#5865f2]/20 border border-[#5865f2] text-indigo-300 text-xs font-mono px-4 py-2 rounded-xl animate-pulse">
+                        {statusMessage}
+                    </div>
+                )}
 
-            <div className="security-section">
-                <h3>🔒 Channel Lockdown ({channel})</h3>
-                <p className="security-desc">Lock this channel with a password. Users joining will need to provide the password or an invite code.</p>
-                <div className="lock-input-group">
-                    <input
-                        type="password"
-                        placeholder="Enter password..."
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        className="security-input"
-                    />
-                    <button onClick={handleSetLock} className="security-btn lock-btn">
-                        Set Password
-                    </button>
-                    <button onClick={() => { setPassword(''); socket.emit('set_channel_lock', { channel, password: '', username }); }} className="security-btn unlock-btn">
-                        Unlock Channel
-                    </button>
+                {/* E2EE Custom Key Manager */}
+                <div className="bg-[#10141a] border border-[#30363d] rounded-xl p-5 shadow-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Shield size={20} className="text-emerald-400" />
+                        <h3 className="font-bold text-sm text-[#dfe2eb]">End-to-End Encryption (E2EE)</h3>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                        Traffic across LAN is encrypted end-to-end. You can configure a custom passphrase for maximum privacy.
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="password"
+                            placeholder="Custom E2EE Passphrase..."
+                            value={encryptionPassphrase === 'LAN-SATURN-DEFAULT-KEY' ? '' : encryptionPassphrase}
+                            onChange={e => setEncryptionPassphrase(e.target.value || 'LAN-SATURN-DEFAULT-KEY')}
+                            className="flex-1 bg-[#181c22] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-[#dfe2eb] outline-none focus:border-[#5865f2]"
+                        />
+                        <span className={`text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 ${cryptoReady ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
+                            {cryptoReady ? 'Active ✅' : 'Initializing...'}
+                        </span>
+                    </div>
                 </div>
-            </div>
 
-            <div className="security-section">
-                <h3>🎟️ Access Invites</h3>
-                <p className="security-desc">Generate a temporary invite code for this channel. Users with this code bypass password protection checks.</p>
-                <div className="invite-actions">
-                    <button onClick={handleGenerateInvite} className="security-btn invite-btn">
-                        Generate Invite Code
-                    </button>
-                    {inviteCode && (
-                        <div className="invite-code-display">
-                            Code: <span className="invite-code-val">{inviteCode}</span>
-                        </div>
-                    )}
+                {/* Channel Lockdown */}
+                <div className="bg-[#10141a] border border-[#30363d] rounded-xl p-5 shadow-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Lock size={20} className="text-amber-400" />
+                        <h3 className="font-bold text-sm text-[#dfe2eb]">Channel Lockdown (#{channel})</h3>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                        Lock this channel with a password. Joining users will require the password or a valid invite code.
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="password"
+                            placeholder="Set Channel Password (leave blank to unlock)..."
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            className="flex-1 bg-[#181c22] border border-[#30363d] rounded-lg px-3 py-2 text-xs text-[#dfe2eb] outline-none focus:border-[#5865f2]"
+                        />
+                        <button 
+                            onClick={handleSetLock}
+                            className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+                        >
+                            Update Lock
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            <div className="security-section devices-section">
-                <h3>🖥️ Connected LAN Devices</h3>
-                <p className="security-desc">Authorize or block devices on the local network. Untrusted devices cannot transmit messages or files.</p>
-                <div className="device-table-container">
-                    <table className="devices-table">
-                        <thead>
-                            <tr>
-                                <th>IP Address</th>
-                                <th>Device Browser</th>
-                                <th>Permission</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {devices.length === 0 ? (
+                {/* Invite Code Generator */}
+                <div className="bg-[#10141a] border border-[#30363d] rounded-xl p-5 shadow-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Key size={20} className="text-indigo-400" />
+                        <h3 className="font-bold text-sm text-[#dfe2eb]">Generate Channel Invite Code</h3>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                        Generate a 1-time access invite code for users to join locked channels.
+                    </p>
+                    <div className="flex items-center gap-3">
+                        <button 
+                            onClick={handleGenerateInvite}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
+                        >
+                            Generate Invite
+                        </button>
+                        {inviteCode && (
+                            <div className="flex items-center gap-2 bg-[#181c22] border border-emerald-500/40 px-3 py-1.5 rounded-lg">
+                                <span className="text-xs font-mono text-emerald-400 font-bold">{inviteCode}</span>
+                                <button 
+                                    onClick={() => navigator.clipboard.writeText(inviteCode)} 
+                                    className="text-gray-400 hover:text-white"
+                                    title="Copy Code"
+                                >
+                                    <Copy size={13} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Connected Devices Table */}
+                <div className="bg-[#10141a] border border-[#30363d] rounded-xl p-5 shadow-xl">
+                    <div className="flex items-center gap-3 mb-4">
+                        <Laptop size={20} className="text-cyan-400" />
+                        <h3 className="font-bold text-sm text-[#dfe2eb]">Connected LAN Devices</h3>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-gray-300">
+                            <thead className="bg-[#181c22] text-gray-400 font-mono text-[11px] uppercase">
                                 <tr>
-                                    <td colSpan={3} className="empty-devices">No device history. Connect a peer to list them.</td>
+                                    <th className="p-2.5 rounded-l-lg">IP Address</th>
+                                    <th className="p-2.5">User Agent</th>
+                                    <th className="p-2.5">Status</th>
+                                    <th className="p-2.5 rounded-r-lg text-right">Action</th>
                                 </tr>
-                            ) : (
-                                devices.map((dev, idx) => (
-                                    <tr key={idx} className={dev.trusted ? 'device-trusted' : 'device-untrusted'}>
-                                        <td className="ip-td">📡 {dev.ip}</td>
-                                        <td className="ua-td" title={dev.userAgent}>{cleanUserAgent(dev.userAgent)}</td>
-                                        <td>
-                                            <button 
-                                                onClick={() => handleToggleTrust(dev)} 
-                                                className={`security-btn trust-toggle-btn ${dev.trusted ? 'btn-revoke' : 'btn-approve'}`}
-                                            >
-                                                {dev.trusted ? 'Revoke Trust' : 'Approve Device'}
-                                            </button>
-                                        </td>
+                            </thead>
+                            <tbody className="divide-y divide-[#30363d]">
+                                {devices.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="text-center py-6 text-gray-500 italic">No devices found.</td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    devices.map((device, idx) => (
+                                        <tr key={idx} className="hover:bg-[#181c22]/50 transition-colors">
+                                            <td className="p-2.5 font-mono text-indigo-300 font-semibold">{device.ip}</td>
+                                            <td className="p-2.5">{cleanUserAgent(device.userAgent)}</td>
+                                            <td className="p-2.5">
+                                                {device.trusted ? (
+                                                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-mono text-[10px] border border-emerald-500/20">Trusted</span>
+                                                ) : (
+                                                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-mono text-[10px] border border-amber-500/20">Untrusted</span>
+                                                )}
+                                            </td>
+                                            <td className="p-2.5 text-right">
+                                                <button 
+                                                    onClick={() => handleToggleTrust(device)}
+                                                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${device.trusted ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40'}`}
+                                                >
+                                                    {device.trusted ? 'Revoke Trust' : 'Trust Device'}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-
-            {statusMessage && <div className="security-toast">{statusMessage}</div>}
         </div>
     );
 }

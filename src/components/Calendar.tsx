@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, Clock, Trash2 } from 'lucide-react';
 
 export default function Calendar({ socket, channel, username }) {
     const [events, setEvents] = useState([]);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
     
-    // Modal states
     const [showModal, setShowModal] = useState(false);
     const [eventTitle, setEventTitle] = useState('');
     const [eventDesc, setEventDesc] = useState('');
@@ -14,7 +14,6 @@ export default function Calendar({ socket, channel, username }) {
     useEffect(() => {
         if (!socket) return;
 
-        // Fetch channel calendar events
         socket.emit('get_events', { channel });
 
         socket.on('calendar_events_list', (data) => {
@@ -38,7 +37,6 @@ export default function Calendar({ socket, channel, username }) {
         };
     }, [socket, channel]);
 
-    // Helpers to build month layout
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
@@ -58,7 +56,6 @@ export default function Calendar({ socket, channel, username }) {
         setCurrentDate(new Date(year, month + 1, 1));
     };
 
-    // Filter events scheduled on the selected day
     const dayEvents = useMemo(() => {
         return events.filter(evt => {
             const evtDate = new Date(evt.startTime);
@@ -68,7 +65,6 @@ export default function Calendar({ socket, channel, username }) {
         });
     }, [events, selectedDate]);
 
-    // Track which days in the current month have events
     const daysWithEvents = useMemo(() => {
         const markedDays = new Set();
         events.forEach(evt => {
@@ -84,7 +80,6 @@ export default function Calendar({ socket, channel, username }) {
         e.preventDefault();
         if (!eventTitle.trim()) return;
 
-        // Construct ISO start time
         const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
         const isoStart = `${dateStr}T${eventTime}:00`;
 
@@ -97,142 +92,156 @@ export default function Calendar({ socket, channel, username }) {
             channel
         });
 
-        // Reset and close
         setEventTitle('');
         setEventDesc('');
-        setEventTime('12:00');
         setShowModal(false);
     };
 
     const handleDeleteEvent = (id) => {
-        socket.emit('delete_event', { id, channel });
+        if (window.confirm('Delete this event?')) {
+            socket.emit('delete_event', { id, channel });
+        }
     };
 
-    // Render calendar days list
-    const calendarDays = [];
-    // Pad empty slots before 1st of month
-    for (let i = 0; i < firstDayIndex; i++) {
-        calendarDays.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
-    }
-    // Days numbers
-    for (let day = 1; day <= daysInMonth; day++) {
-        const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === month && selectedDate.getFullYear() === year;
-        const hasEvent = daysWithEvents.has(day);
-        const isToday = new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year;
-
-        calendarDays.push(
-            <div 
-                key={day} 
-                onClick={() => setSelectedDate(new Date(year, month, day))}
-                className={`calendar-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${hasEvent ? 'has-event' : ''}`}
-            >
-                <span className="day-number">{day}</span>
-                {hasEvent && <span className="event-dot"></span>}
-            </div>
-        );
-    }
-
     return (
-        <div className="calendar-container">
-            <div className="calendar-workspace">
-                {/* Left Side: Calendar Grid */}
-                <div className="calendar-grid-box">
-                    <div className="calendar-grid-header">
-                        <button onClick={handlePrevMonth} className="month-nav-btn">◀</button>
-                        <h2>{monthNames[month]} {year}</h2>
-                        <button onClick={handleNextMonth} className="month-nav-btn">▶</button>
+        <div className="flex-1 flex flex-col h-full bg-[#0D1117] text-[#dfe2eb] p-6 overflow-hidden">
+            <div className="flex flex-1 gap-6 overflow-hidden">
+                {/* Left Month Calendar Canvas */}
+                <div className="flex-1 bg-[#10141a] border border-[#30363d] rounded-xl p-5 shadow-xl flex flex-col overflow-hidden">
+                    {/* Header Controls */}
+                    <div className="flex items-center justify-between pb-4 border-b border-[#30363d] mb-4 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <CalendarIcon size={20} className="text-[#5865f2]" />
+                            <h2 className="text-base font-bold text-[#dfe2eb]">
+                                {monthNames[month]} {year}
+                            </h2>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <button 
+                                onClick={handlePrevMonth}
+                                className="p-1.5 rounded-lg bg-[#181c22] border border-[#30363d] hover:bg-[#262a31] text-gray-300 transition-colors"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <button 
+                                onClick={handleNextMonth}
+                                className="p-1.5 rounded-lg bg-[#181c22] border border-[#30363d] hover:bg-[#262a31] text-gray-300 transition-colors"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
-                    <div className="calendar-weekdays">
-                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+
+                    {/* 7-Column Weekdays Header Grid */}
+                    <div className="grid grid-cols-7 gap-1 text-center font-mono text-xs font-bold text-gray-400 mb-2 py-1 bg-[#181c22] rounded-lg">
+                        <div>Sun</div>
+                        <div>Mon</div>
+                        <div>Tue</div>
+                        <div>Wed</div>
+                        <div>Thu</div>
+                        <div>Fri</div>
+                        <div>Sat</div>
                     </div>
-                    <div className="calendar-days-grid">
-                        {calendarDays}
+
+                    {/* 7-Column Days Grid */}
+                    <div className="grid grid-cols-7 gap-1 flex-1 overflow-y-auto">
+                        {Array.from({ length: firstDayIndex }).map((_, i) => (
+                            <div key={`empty-${i}`} className="p-2 rounded-lg bg-transparent" />
+                        ))}
+
+                        {Array.from({ length: daysInMonth }).map((_, i) => {
+                            const day = i + 1;
+                            const isSelected = selectedDate.getDate() === day &&
+                                               selectedDate.getMonth() === month &&
+                                               selectedDate.getFullYear() === year;
+                            const isToday = new Date().getDate() === day &&
+                                            new Date().getMonth() === month &&
+                                            new Date().getFullYear() === year;
+                            const hasEvents = daysWithEvents.has(day);
+
+                            return (
+                                <button
+                                    key={day}
+                                    onClick={() => setSelectedDate(new Date(year, month, day))}
+                                    className={`relative p-3 rounded-xl flex flex-col items-center justify-between border transition-all ${isSelected ? 'bg-[#5865f2] border-[#5865f2] text-white shadow-lg font-bold' : isToday ? 'bg-[#5865f2]/20 border-[#5865f2] text-indigo-300 font-bold' : 'bg-[#181c22] border-[#30363d] text-gray-300 hover:bg-[#262a31]'}`}
+                                >
+                                    <span className="text-xs">{day}</span>
+                                    {hasEvents && (
+                                        <span className={`w-1.5 h-1.5 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-emerald-400'}`}></span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Right Side: Date Detail Events List */}
-                <div className="calendar-events-detail">
-                    <div className="detail-header">
-                        <h3>Events: {selectedDate.toDateString()}</h3>
-                        <button onClick={() => setShowModal(true)} className="add-event-fab">
-                            + Add Event
+                {/* Right Events & Add Form Panel */}
+                <div className="w-80 bg-[#10141a] border border-[#30363d] rounded-xl p-5 shadow-xl flex flex-col shrink-0 overflow-hidden">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#30363d] mb-4 shrink-0">
+                        <div>
+                            <h3 className="font-bold text-sm text-[#dfe2eb]">Events</h3>
+                            <p className="text-[11px] font-mono text-gray-400">{selectedDate.toDateString()}</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowModal(!showModal)}
+                            className="p-1.5 rounded-lg bg-[#5865f2] hover:bg-[#4752c4] text-white transition-colors flex items-center justify-center cursor-pointer shadow-sm"
+                            title="Add Event"
+                        >
+                            <Plus size={16} />
                         </button>
                     </div>
 
-                    <div className="detail-events-list">
+                    {showModal && (
+                        <form onSubmit={handleAddEvent} className="mb-4 bg-[#181c22] border border-[#30363d] rounded-xl p-3 space-y-2">
+                            <input
+                                type="text"
+                                placeholder="Event Title..."
+                                value={eventTitle}
+                                onChange={e => setEventTitle(e.target.value)}
+                                className="w-full bg-[#10141a] border border-[#30363d] rounded-md px-2.5 py-1.5 text-xs text-[#dfe2eb] outline-none focus:border-[#5865f2]"
+                                autoFocus
+                            />
+                            <input
+                                type="time"
+                                value={eventTime}
+                                onChange={e => setEventTime(e.target.value)}
+                                className="w-full bg-[#10141a] border border-[#30363d] rounded-md px-2.5 py-1.5 text-xs text-[#dfe2eb] outline-none focus:border-[#5865f2]"
+                            />
+                            <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-1.5 rounded-md transition-colors">
+                                Save Event
+                            </button>
+                        </form>
+                    )}
+
+                    <div className="flex-1 overflow-y-auto space-y-2">
                         {dayEvents.length === 0 ? (
-                            <div className="empty-day-events">No events scheduled for this day. Click "+ Add Event" to schedule.</div>
+                            <div className="text-xs text-gray-500 italic text-center py-8">No events scheduled for this date.</div>
                         ) : (
-                            dayEvents.map(evt => (
-                                <div key={evt.id} className="calendar-event-card">
-                                    <div className="event-card-header">
-                                        <h4>{evt.title}</h4>
-                                        <button onClick={() => handleDeleteEvent(evt.id)} className="delete-event-btn" title="Delete event">
-                                            🗑️
+                            dayEvents.map(evt => {
+                                const evtTime = new Date(evt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                return (
+                                    <div key={evt.id} className="bg-[#181c22] border border-[#30363d] rounded-xl p-3 flex items-start justify-between group">
+                                        <div>
+                                            <h4 className="font-bold text-xs text-[#dfe2eb]">{evt.title}</h4>
+                                            <div className="flex items-center gap-1 text-[10px] text-gray-400 font-mono mt-1">
+                                                <Clock size={11} />
+                                                <span>{evtTime}</span>
+                                                <span className="ml-1 text-indigo-400">by {evt.creator}</span>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleDeleteEvent(evt.id)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-500 hover:text-rose-400 transition-opacity"
+                                        >
+                                            <Trash2 size={13} />
                                         </button>
                                     </div>
-                                    {evt.description && <p className="event-card-desc">{evt.description}</p>}
-                                    <div className="event-card-meta">
-                                        <span>⏰ {new Date(evt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        <span>👤 {evt.creator}</span>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
             </div>
-
-            {/* Event Form Modal */}
-            {showModal && (
-                <div className="modal-backdrop">
-                    <div className="modal-content add-event-modal">
-                        <div className="modal-header">
-                            <h3>Schedule Event</h3>
-                            <button onClick={() => setShowModal(false)} className="close-modal-btn">&times;</button>
-                        </div>
-                        <form onSubmit={handleAddEvent} className="event-form">
-                            <div className="form-group">
-                                <label>Title *</label>
-                                <input 
-                                    type="text" 
-                                    required 
-                                    value={eventTitle}
-                                    onChange={e => setEventTitle(e.target.value)}
-                                    placeholder="Event title..."
-                                    maxLength={100}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Description</label>
-                                <textarea 
-                                    value={eventDesc}
-                                    onChange={e => setEventDesc(e.target.value)}
-                                    placeholder="Add description (optional)..."
-                                    maxLength={300}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Time *</label>
-                                <input 
-                                    type="time" 
-                                    required 
-                                    value={eventTime}
-                                    onChange={e => setEventTime(e.target.value)}
-                                />
-                            </div>
-                            <div className="modal-actions">
-                                <button type="button" onClick={() => setShowModal(false)} className="cancel-btn">
-                                    Cancel
-                                </button>
-                                <button type="submit" className="submit-btn">
-                                    Schedule
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

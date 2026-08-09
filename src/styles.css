@@ -52,6 +52,12 @@
   border-color: #5865f2;
 }
 
+/* Explicit 7-Column Grid for Calendar */
+.grid-cols-7 {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+}
+
 /* --- Custom Scrollbar --- */
 ::-webkit-scrollbar {
   width: 6px;
@@ -552,6 +558,55 @@
 .reaction-pill .count {
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* Tool Pages Layout & Grid Fixes */
+.shared-notes-container,
+.file-browser-container {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  background-color: #0d1117 !important;
+}
+
+.notes-sidebar {
+  width: 256px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background-color: #10141a !important;
+  border-right: 1px solid #30363d !important;
+  padding: 16px !important;
+  flex-shrink: 0 !important;
+}
+
+.notes-editor-panel {
+  flex: 1 1 0% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 24px !important;
+  background-color: #0d1117 !important;
+  overflow: hidden !important;
+}
+
+.calendar-weekdays,
+.calendar-days-grid,
+.grid-cols-7 {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+}
+
+.clipboard-sync-container,
+.security-panel-container {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #0d1117 !important;
+  padding: 24px !important;
+  overflow-y: auto !important;
 }
 
 
