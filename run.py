@@ -1,7 +1,5 @@
-import eventlet
-eventlet.monkey_patch()
-
 from app import create_app, socketio
+
 from app.utils.network import get_lan_urls
 from app.constants import PORT
 
@@ -14,4 +12,5 @@ if __name__ == '__main__':
         print(f'Open from phone/hotspot device: {url}')
     print('If phone cannot open it, allow Python through Windows Firewall for Private networks.\n')
 
-    socketio.run(app, host='0.0.0.0', port=PORT, debug=False)
+    socketio.run(app, host='0.0.0.0', port=PORT, debug=False, allow_unsafe_werkzeug=True)
+
