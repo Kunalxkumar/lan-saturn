@@ -17,30 +17,28 @@ export default function Sidebar({
         <aside className="w-64 bg-saturn-dark flex-none flex flex-col border-r border-saturn-light text-gray-300 relative z-20">
             <WorkspaceHeader connectionStatus={connectionStatus} />
             
-            <div className="h-px bg-saturn-light my-2 mx-4 opacity-50" />
-            
-            <ChannelList 
-                activeChannel={activeChannel}
-                setActiveChannel={setActiveChannel}
-                activeView={activeView}
-                setActiveView={setActiveView}
-            />
+            <div className="flex-1 overflow-y-auto flex flex-col py-2">
+                <ChannelList 
+                    activeChannel={activeChannel}
+                    setActiveChannel={setActiveChannel}
+                    activeView={activeView}
+                    setActiveView={setActiveView}
+                />
 
-            <div className="h-px bg-saturn-light my-2 mx-4 opacity-50" />
+                <div className="h-px bg-saturn-light mx-4 my-2 opacity-40" />
 
-            <ToolList 
-                activeView={activeView}
-                setActiveView={setActiveView}
-            />
+                <ToolList 
+                    activeView={activeView}
+                    setActiveView={setActiveView}
+                />
+            </div>
 
-            <div className="flex-1" />
-            
-            <div className="h-px bg-saturn-light my-2 mx-4 opacity-50" />
-            
-            <UserProfile 
-                currentUsername={currentUsername}
-                setCurrentUsername={setCurrentUsername}
-            />
+            <div className="border-t border-saturn-light p-2 shrink-0">
+                <UserProfile 
+                    currentUsername={currentUsername}
+                    setCurrentUsername={setCurrentUsername}
+                />
+            </div>
         </aside>
     );
 }

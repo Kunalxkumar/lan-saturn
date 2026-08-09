@@ -16,12 +16,12 @@ export default function ChatHeader({
     }
 
     return (
-        <header className="flex items-center justify-between px-4 py-3 bg-saturn-base border-b border-saturn-light shrink-0 min-h-[4rem]">
+        <header className="h-16 px-4 flex items-center justify-between bg-saturn-base border-b border-saturn-light shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-                <Hash size={24} className="text-gray-400 shrink-0" />
-                <h1 className="font-semibold text-lg truncate">{activeChannel}</h1>
-                <div className="w-px h-6 bg-gray-600 mx-2" />
-                <p className="text-sm text-gray-400 truncate">{title}</p>
+                <Hash size={20} className="text-gray-400 shrink-0" />
+                <h1 className="font-bold text-base text-gray-100 truncate">{activeChannel}</h1>
+                <div className="w-px h-5 bg-saturn-light mx-1 shrink-0" />
+                <p className="text-xs text-gray-400 truncate hidden sm:block">{title}</p>
             </div>
             
             <div className="flex items-center gap-4 shrink-0">
