@@ -3,15 +3,15 @@ echo ========================================================
 echo Building LAN Saturn Executable and Setup Installer
 echo ========================================================
 
-echo [1/4] Building React frontend via npm run build...
-call npm run build
+echo [1/4] Building React frontend via npx vite build...
+call npx vite build
 if %ERRORLEVEL% NEQ 0 (
-    echo Error: npm run build failed!
+    echo Error: vite build failed!
     exit /b %ERRORLEVEL%
 )
 
-echo [2/4] Packaging Python launcher with PyInstaller...
-pyinstaller --noconfirm --onefile --windowed --name LAN-Saturn --hidden-import engineio.async_drivers.threading --add-data "app/templates;app/templates" --add-data "app/static;app/static" --add-data "assets;assets" launcher.py
+echo [2/4] Packaging Python launcher with PyInstaller (Embedded PE Version Info)...
+pyinstaller --noconfirm --onefile --windowed --name LAN-Saturn --version-file version_info.txt --hidden-import engineio.async_drivers.threading --add-data "app/templates;app/templates" --add-data "app/static;app/static" --add-data "assets;assets" launcher.py
 if %ERRORLEVEL% NEQ 0 (
     echo Error: PyInstaller build failed!
     exit /b %ERRORLEVEL%

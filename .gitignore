@@ -19,36 +19,20 @@ Thumbs.db
 *.log
 logs/
 
-# Archives
-*.rar
-*.zip
-*.tar.gz
-
 # Environment variables
 .env
 .env.local
 
-# Database
+# Database & runtime files
 *.db
 *.sqlite
 *.sqlite3
+uploads/*
+!uploads/.gitkeep
+notes/*
+!notes/.gitkeep
 
-# Temporary files
-*.tmp
-*.temp
-
-# Build Artifacts
+# Build Artifacts & Intermediate Outputs
 build/
 dist/
-uploads/
-graphify-out/
 *.spec
-src-tauri/target/
-src-tauri/binaries/
-app/static/js/bundle.js
-app/static/js/bundle.js.map
-app/static/js/bundle.js.LICENSE.txt
-*.exe
-*.msi
-installers/
-notes/
