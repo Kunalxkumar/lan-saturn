@@ -45,6 +45,53 @@ def save_uploaded_file(file_storage, chat_repo=None):
     return {"fileUrl": f"/files/{stored_filename}", "filename": filename, "hash": sha256.hexdigest()}
 
 
+def append_chunk_offset(stored_filename, chunk_data, offset, total_size, chat_repo=None):
+    """Append a chunk at a specified byte offset for resumable file transfers."""
+    safe_stored = secure_filename(stored_filename)
+    if not safe_stored:
+        raise ValueError("Invalid target filename")
+
+    file_path = os.path.join(Config.UPLOAD_FOLDER, safe_stored)
+    mode = "r+b" if os.path.exists(file_path) else "wb"
+    
+    with open(file_path, mode) as f:
+        f.seek(offset)
+        f.write(chunk_data)
+
+    current_size = os.path.getsize(file_path)
+    is_complete = current_size >= total_size
+    file_hash = None
+
+    if is_complete:
+        sha256 = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            while c := f.read(8192):
+                sha256.update(c)
+        file_hash = sha256.hexdigest()
+
+        repo = chat_repo or ChatRepository()
+        repo.add_transfer_history(
+            TransferItem(
+                id=f"tx_{int(time.time() * 1000)}",
+                filename=safe_stored,
+                size=current_size,
+                hash=file_hash,
+                timestamp=time.time(),
+                type="chunked_upload",
+                direction="sent",
+            )
+        )
+
+    return {
+        "fileUrl": f"/files/{safe_stored}",
+        "filename": safe_stored,
+        "currentSize": current_size,
+        "totalSize": total_size,
+        "isComplete": is_complete,
+        "hash": file_hash
+    }
+
+
 def get_zip_contents(filename):
     safe_filename = secure_filename(filename)
     file_path = os.path.join(Config.UPLOAD_FOLDER, safe_filename)

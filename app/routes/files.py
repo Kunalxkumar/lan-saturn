@@ -1,5 +1,5 @@
 from flask import Blueprint, request, send_from_directory, current_app, jsonify
-from app.services.file_service import get_zip_contents, save_uploaded_file
+from app.services.file_service import get_zip_contents, save_uploaded_file, append_chunk_offset
 from app.repositories.chat_repo import ChatRepository
 from app.services.auth import get_request_session, require_request_trusted
 
@@ -24,6 +24,33 @@ def upload_file():
         return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
         current_app.logger.exception("File upload failed")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
+@files_bp.route('/upload-chunk', methods=['POST'])
+def upload_chunk():
+    session = get_request_session()
+    if not session or not require_request_trusted():
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No chunk file part'}), 400
+    
+    filename = request.form.get('filename')
+    offset = int(request.form.get('offset', 0))
+    total_size = int(request.form.get('totalSize', 0))
+    chunk_file = request.files['file']
+
+    if not filename or total_size <= 0:
+        return jsonify({'success': False, 'error': 'Invalid chunk parameters'}), 400
+
+    try:
+        chunk_data = chunk_file.read()
+        res = append_chunk_offset(filename, chunk_data, offset, total_size, chat_repo)
+        return jsonify(dict(success=True, **res))
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        current_app.logger.exception("Chunk upload failed")
         return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 @files_bp.route('/files/<filename>')

@@ -19,10 +19,12 @@ def create_app(config_class=Config) -> Flask:
     from app.routes.main import main_bp
     from app.routes.files import files_bp
     from app.routes.shared_dir import shared_dir_bp
+    from app.routes.peers import peers_bp
 
     flask_app.register_blueprint(main_bp)
     flask_app.register_blueprint(files_bp)
     flask_app.register_blueprint(shared_dir_bp)
+    flask_app.register_blueprint(peers_bp)
 
     # Import Socket.IO handlers to load event listener decorators
     from app.sockets import chat, polls, tasks, notes, clipboard, announcements, security, calendar
