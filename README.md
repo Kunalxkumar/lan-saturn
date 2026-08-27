@@ -46,9 +46,16 @@ LAN Saturn is under active development. Current system status:
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
+### Downloads & Releases (End Users)
+
+Download pre-compiled Windows binaries directly from official releases:
+
+- 📦 **[Latest Production Release (v1.1.0)](https://github.com/Kunalxkumar/lan-saturn/releases/tag/v1.1.0)**
+- 🚀 **[Standalone Portable Executable (`LAN-Saturn.exe`)](https://github.com/Kunalxkumar/lan-saturn/releases/download/v1.1.0/LAN-Saturn.exe)**
+- ⚡ **[Windows Setup Wizard Installer (`LAN-Saturn-Setup.exe`)](https://github.com/Kunalxkumar/lan-saturn/releases/download/v1.1.0/LAN-Saturn-Setup.exe)**
+- 🏷️ **[View All GitHub Releases](https://github.com/Kunalxkumar/lan-saturn/releases)**
+
+---
 
 ### Developer Setup
 
