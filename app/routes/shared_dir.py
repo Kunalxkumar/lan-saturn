@@ -112,4 +112,4 @@ def download_shared_file():
     )
     chat_repo.add_transfer_history(transfer_item)
 
-    return send_from_directory(dir_name, file_name, as_attachment=True)
+    return send_from_directory(dir_name, file_name, as_attachment=True, conditional=True)

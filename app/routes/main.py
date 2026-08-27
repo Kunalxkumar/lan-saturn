@@ -25,11 +25,14 @@ def static_files(filename):
 def health():
     return {'success': True, 'message': 'LAN Saturn is running'}
 
+from app.services.bluetooth_service import get_bluetooth_info
+
 @main_bp.route('/lan-info')
 def lan_info():
     return {
         'success': True,
         'urls': get_lan_urls(),
+        'bluetooth': get_bluetooth_info(),
         'port': PORT
     }
 

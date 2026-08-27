@@ -30,7 +30,7 @@ def upload_file():
 def serve_file(filename):
     if not require_request_trusted():
         return jsonify({'success': False, 'error': 'Authentication required'}), 401
-    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename, conditional=True)
 
 @files_bp.route('/api/transfer-history', methods=['GET'])
 def get_transfer_history():
