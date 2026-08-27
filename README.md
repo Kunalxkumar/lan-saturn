@@ -1,135 +1,96 @@
 <h1 align="center">🪐 LAN Saturn</h1>
 
 <p align="center">
-  <strong>A modern, Discord-inspired, LAN-based real-time collaboration application with strict End-to-End Encryption (E2EE) and Cryptographic Identity verification.</strong>
+  <strong>Open-source, local-first file sharing and chat for Windows.</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.7+-blue.svg" alt="Python Version">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python Version">
   <img src="https://img.shields.io/badge/React-18-blue.svg" alt="React">
   <img src="https://img.shields.io/badge/Encryption-XChaCha20--Poly1305-success.svg" alt="Encryption">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
 
-LAN Saturn is designed for fully offline local networks (Wi-Fi or Mobile Hotspots). It enables seamless communication for teams, study groups, or offline deployments without relying on any external internet connection or cloud servers.
+LAN Saturn is an open-source application designed for local network collaboration (Wi-Fi networks or Mobile Hotspots) without internet connectivity or third-party cloud servers.
 
-## ✨ Features
-
-* **Zero-Config LAN Discovery**: Automatically finds other LAN Saturn servers on your network using UDP broadcast / mDNS.
-* **Cryptographic Identity**: Devices are authenticated using Ed25519 Keypairs, preventing username impersonation.
-* **End-to-End Encryption (E2EE)**: All messages and files are encrypted client-side using `libsodium` (XChaCha20-Poly1305) before transmission. The server never sees plaintext data.
-* **Resilient File Transfers**: Chunked file uploading (with automatic resumes and progress bars) handles network instability gracefully.
-* **Channels & DMs**: Switch between public channels (e.g., `#general`, `#study`) or send Private Direct Messages to specific users.
-* **Discord-like UI**: A familiar, responsive interface optimized for speed and clarity.
+Inspired by the architecture of modern peer-to-peer systems such as **[LocalSend](https://github.com/localsend/localsend)**, **[Google Nearby Connections](https://github.com/google/nearby)**, and **[Apple AirDrop](https://support.apple.com/guide/security/airdrop-security-sec2261183f4/web)**. *(Note: LAN Saturn does not claim interoperability with these systems).*
 
 ---
 
-## 🏗️ Architecture Flow
+## 🚦 Current Status
 
-```mermaid
-graph TD
-    subgraph client_a ["Client A (Browser/Tauri)"]
-        A1["React UI"] --> A2["libsodium E2EE Module"]
-        A2 --> A3["Socket.IO Client"]
-        A1 --> A4["Ed25519 Keypair"]
-    end
+LAN Saturn is under active development. Current system status:
 
-    subgraph client_b ["Client B (Browser/Tauri)"]
-        B1["React UI"] --> B2["libsodium E2EE Module"]
-        B2 --> B3["Socket.IO Client"]
-        B1 --> B4["Ed25519 Keypair"]
-    end
-
-    subgraph server ["Server (Flask)"]
-        S1["UDP Broadcast Discovery"]
-        S2["Socket.IO Server"]
-        S3["SQLite State Manager"]
-        S4["Chunked File Upload API"]
-    end
-
-    A3 -- "WebSocket (Encrypted Payload)" --> S2
-    S2 -- "Broadcast" --> B3
-    S1 -. "UDP Broadcast (Port 5001)" .-> A1
-    A4 -. "Device Signature Check" .-> S2
-```
-
-## 🔐 Security Flow
-
-LAN Saturn employs a Zero-Trust architecture regarding the server.
-
-1. **Identity Generation**: Upon first launch, the client generates an `Ed25519` keypair. The Public Key acts as the user's unforgeable identity.
-2. **Encryption**: When sending a message, the payload is symmetrically encrypted via `XChaCha20-Poly1305` using a shared network passphrase.
-3. **Signing**: The encrypted cipherbytes are then signed by the client's Private Key.
-4. **Verification**: Upon receiving the packet, the server (and other clients) verify the `Ed25519` signature against the registered public key, guaranteeing sender authenticity.
-5. **Decryption**: Receiving clients use the shared passphrase to decrypt the payload.
-
-```text
-Message ➡️ XChaCha20-Poly1305 ➡️ Ciphertext ➡️ Ed25519 Signature ➡️ [WebSocket Transmission] ➡️ Signature Verification ➡️ Decryption ➡️ Read
-```
+- **Stable**:
+  - **UDP Peer Discovery**: Versioned protocol (`lan-saturn` v1) with persistent node device UUIDs and peer lifecycle tracking.
+  - **Local File Transfers**: Accelerated HTTP file serving with byte-range request support (`Accept-Ranges: bytes`).
+  - **Real-time Chat & Channels**: Multi-channel communication over Socket.IO.
+  - **Security & Session Boundary**: Session authentication, loopback auto-trust, and administrative access control.
+  - **Client-Side Cryptography**: XChaCha20-Poly1305 AEAD + Argon2id key derivation via `libsodium-wrappers`.
+- **Experimental**:
+  - **Bluetooth Integration**: Local Bluetooth adapter discovery and RFCOMM/PAN metadata sharing groundwork (see [`docs/ARCHITECTURE_AUDIT.md`](file:///w:/Project/lan-saturn-main/docs/ARCHITECTURE_AUDIT.md)).
+- **Not Yet Benchmarked**:
+  - **Physical Wi-Fi Throughput**: Throughput on physical multi-machine LAN topologies is unbenchmarked. Reproducible benchmark infrastructure is available in [`benchmarks/transfer_benchmark.py`](file:///w:/Project/lan-saturn-main/benchmarks/transfer_benchmark.py) and documented in [`docs/BENCHMARKS.md`](file:///w:/Project/lan-saturn-main/docs/BENCHMARKS.md).
 
 ---
 
-## 🚀 Installation & Usage
+## ✨ Core Features
 
-### For Non-Developers (End Users)
+* **Versioned UDP Discovery**: Automatically discovers peers on UDP port 5001 with stable device UUIDs, avoiding duplicate entries across IP changes.
+* **Resilient HTTP Transfers**: Byte-range enabled HTTP file transfers for reliable local network file distribution.
+* **Cryptographic Identity & Encryption**: Client-side message and payload encryption using `libsodium` (Argon2id + XChaCha20-Poly1305).
+* **Channels & Private Messaging**: Discord-inspired UI for switching between public channels and direct client messages.
+* **Offline-First Operating Model**: Functions completely offline on local subnets and Wi-Fi Hotspots without cloud dependencies.
 
-1. Download the latest `LAN Saturn.exe` from the [Releases](#) tab.
-2. Run the application.
-3. If hosting, the app will automatically start a server and broadcast itself to the LAN.
-4. Other devices on the same Wi-Fi/Hotspot will see the server via **Automatic LAN Discovery** and can click to join.
-5. *(Optional)* Mobile users can join by typing the host's IP address (e.g., `http://192.168.1.5:5000`) in their browser.
+---
 
-### For Developers
+## 🚀 Getting Started
 
-**Prerequisites**: Python 3.9+, Node.js 18+, Rust (optional for Tauri desktop apps).
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
 
-1. **Clone the repository:**
-```bash
-git clone https://github.com/YOUR_USERNAME/lan-saturn.git
-cd lan-saturn
-```
+### Developer Setup
+
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/Kunalxkumar/lan-saturn.git
+   cd lan-saturn
+   ```
 
 2. **Install Dependencies:**
-```bash
-pip install -r requirements.txt
-npm install
-```
+   ```bash
+   pip install -r requirements.txt
+   npm install
+   ```
 
-3. **Start Development Environment:**
-```bash
-npm run dev
-```
-*This launches the Vite development server on port 5173 with proxy routing to the Python Flask backend on port 5000.*
+3. **Launch Development Server:**
+   ```bash
+   npm run dev
+   ```
+   *Launches Vite frontend (port 5173) and Flask/Socket.IO backend (port 5000).*
 
-4. **Environment Variables (Optional):**
-- `SECRET_KEY`: Set a custom secret key (defaults to dynamic 32-byte cryptographically random hex if omitted).
-- `PORT`: Set custom backend server port (defaults to 5000).
+4. **Run Test Suite:**
+   ```bash
+   python -m pytest -v tests/
+   ```
 
-5. **Run Unit & Integration Tests:**
-```bash
-pytest -v tests/
-```
-
----
-
-## 🛠️ Tech Stack
-
-* **Frontend**: TypeScript, React, Vite, Lucide Icons
-* **Desktop Wrapper**: Tauri (Rust)
-* **Backend**: Python, Flask, Flask-SocketIO
-* **Database**: SQLite (SQLAlchemy)
-* **Cryptography**: `libsodium-wrappers`
+5. **Run Transfer Benchmarks:**
+   ```bash
+   python benchmarks/transfer_benchmark.py --size 100MB
+   ```
 
 ---
 
-## 🙏 Acknowledgements & Credits
+## 📚 Documentation & Research
 
-Special thanks to the creators and maintainers of **[libsodium](https://github.com/jedisct1/libsodium)** and **[libsodium-wrappers](https://github.com/jedisct1/libsodium.js)**. 
-
-LAN Saturn relies directly on libsodium for all client-side End-to-End Encryption (E2EE) and cryptographic identity features, including:
-- **XChaCha20-Poly1305** authenticated symmetric encryption (`crypto_aead_xchacha20poly1305_ietf`).
-- **Argon2id** key derivation (`crypto_pwhash`).
-- **Ed25519** digital signatures (`crypto_sign`).
+- **[Architecture Audit & Specifications](file:///w:/Project/lan-saturn-main/docs/ARCHITECTURE_AUDIT.md)**: Deep dive into current implementation, limitations, open-source citations, and Windows Bluetooth evaluation.
+- **[Transfer Benchmarks Guide](file:///w:/Project/lan-saturn-main/docs/BENCHMARKS.md)**: Protocol and benchmark execution instructions.
+- **[Security Policy](file:///w:/Project/lan-saturn-main/SECURITY.md)**: Security architecture and vulnerability disclosure guidelines.
+- **[Contributing Guide](file:///w:/Project/lan-saturn-main/CONTRIBUTING.md)**: Community development standards and guidelines.
 
 ---
-*Built for fully offline, secure collaboration.*
+
+## 📜 License
+
+Distributed under the [MIT License](file:///w:/Project/lan-saturn-main/LICENSE).
