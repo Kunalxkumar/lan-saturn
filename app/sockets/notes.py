@@ -2,9 +2,7 @@ from flask import request
 from flask_socketio import emit
 from app.extensions import socketio
 from app.services.auth import require_socket_channel, require_socket_trusted
-from app.repositories.note_repo import NoteRepository
-
-note_repo = NoteRepository()
+from app.repositories import note_repo
 
 @socketio.on('get_notes')
 def handle_get_notes(data):

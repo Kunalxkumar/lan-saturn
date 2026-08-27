@@ -3,9 +3,7 @@ from flask import request
 from flask_socketio import emit
 from app.extensions import socketio
 from app.services.auth import get_session_username, get_socket_session, require_socket_channel, require_socket_trusted
-from app.repositories.calendar_repo import CalendarRepository
-
-calendar_repo = CalendarRepository()
+from app.repositories import calendar_repo
 
 @socketio.on('create_event')
 def handle_create_event(data):

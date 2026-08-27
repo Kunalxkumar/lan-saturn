@@ -5,11 +5,9 @@ from pydantic import ValidationError
 
 from app.extensions import socketio
 from app.services.auth import get_session_username, get_socket_session, require_socket_channel, require_socket_trusted
-from app.repositories.poll_repo import PollRepository
+from app.repositories import poll_repo
 from app.models.models import Poll
 from app.schemas.validation import CreatePollSchema, VotePollSchema
-
-poll_repo = PollRepository()
 
 @socketio.on('create_poll')
 def handle_create_poll(data):
