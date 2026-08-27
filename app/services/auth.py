@@ -35,7 +35,7 @@ def _new_session(remote_addr: Optional[str], user_agent: str):
     _sessions[session_id] = {
         "id": session_id,
         "username": None,
-        "channels": set(),
+        "channels": {"general", "random", "study", "files"},
         "is_admin": _is_loopback(remote_addr),
         "trusted": trusted,
         "remote_addr": remote_addr,
@@ -121,7 +121,11 @@ def remove_channel_membership(session, channel: str):
 
 
 def has_channel_access(session, channel: str):
-    return channel in session["channels"]
+    if not session:
+        return False
+    if not _security_repo.is_channel_locked(channel):
+        return True
+    return channel in session.get("channels", set())
 
 
 def require_socket_admin():
