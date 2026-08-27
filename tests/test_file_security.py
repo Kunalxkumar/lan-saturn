@@ -4,7 +4,7 @@ import pytest
 from app import create_app
 from app.config import Config
 from app.routes.shared_dir import is_safe_subpath
-from app.services.file_service import FileService, MAX_ZIP_ENTRIES
+from app.services.file_service import MAX_ZIP_ENTRIES, get_zip_contents
 
 @pytest.fixture
 def app():
@@ -45,6 +45,5 @@ def test_zip_preview_limit(tmp_path, monkeypatch):
         for i in range(MAX_ZIP_ENTRIES + 10):
             z.writestr(f"file_{i}.txt", "test")
 
-    service = FileService()
     with pytest.raises(ValueError, match="exceeds maximum entry limit"):
-        service.get_zip_contents("large.zip")
+        get_zip_contents("large.zip")

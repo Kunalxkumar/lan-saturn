@@ -2,10 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface AppState {
-    theme: string;
-    setTheme: (theme: string) => void;
-    activeServerId: string;
-    setActiveServerId: (id: string) => void;
     activeChannel: string;
     setActiveChannel: (channel: string) => void;
     activeView: string;
@@ -17,12 +13,6 @@ interface AppState {
 export const useAppStore = create<AppState>()(
     persist(
         (set) => ({
-            theme: 'dark',
-            setTheme: (theme) => set({ theme }),
-            
-            activeServerId: 'saturn',
-            setActiveServerId: (id) => set({ activeServerId: id }),
-            
             activeChannel: 'general',
             setActiveChannel: (channel) => set({ activeChannel: channel }),
             
@@ -35,8 +25,6 @@ export const useAppStore = create<AppState>()(
         {
             name: 'lan-saturn-app-storage',
             partialize: (state) => ({ 
-                theme: state.theme,
-                activeServerId: state.activeServerId,
                 activeChannel: state.activeChannel,
                 activeView: state.activeView
             }),
@@ -47,8 +35,6 @@ export const useAppStore = create<AppState>()(
 interface UIState {
     searchQuery: string;
     setSearchQuery: (query: string) => void;
-    showBroadcastInput: boolean;
-    setShowBroadcastInput: (show: boolean) => void;
     showPollModal: boolean;
     setShowPollModal: (show: boolean) => void;
     showTransferHistory: boolean;
@@ -58,9 +44,6 @@ interface UIState {
 export const useUIStore = create<UIState>((set) => ({
     searchQuery: '',
     setSearchQuery: (query) => set({ searchQuery: query }),
-
-    showBroadcastInput: false,
-    setShowBroadcastInput: (show) => set({ showBroadcastInput: show }),
     
     showPollModal: false,
     setShowPollModal: (show) => set({ showPollModal: show }),

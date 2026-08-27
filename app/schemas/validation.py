@@ -18,7 +18,7 @@ class SendMessageSchema(BaseModel):
 
 class CreatePollSchema(BaseModel):
     question: str = Field(..., min_length=1, max_length=200)
-    options: List[str] = Field(..., min_items=2, max_items=6)
+    options: List[str] = Field(..., min_length=2, max_length=6)
     channel: str = Field(default="general", max_length=50)
     username: str = Field(default="Anonymous", max_length=50)
     timestamp: str = Field(default="")

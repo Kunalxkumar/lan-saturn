@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify, send_from_directory
 from pydantic import ValidationError
 import os
 import time
-from app.services.state_manager import state_manager
+from app.services import state_manager
+from app.services.auth import require_request_admin, require_request_trusted
 from app.schemas.validation import SetSharedDirectorySchema
 from app.models.models import TransferItem
 from app.repositories.chat_repo import ChatRepository
@@ -20,6 +21,8 @@ def is_safe_subpath(base_dir: str, target_path: str) -> bool:
 
 @shared_dir_bp.route('/api/shared-directory/config', methods=['POST'])
 def set_shared_directory():
+    if not require_request_admin():
+        return jsonify({'success': False, 'error': 'Administrator access required'}), 403
     try:
         # Validate incoming request with Pydantic
         schema = SetSharedDirectorySchema(**(request.json or {}))
@@ -39,11 +42,15 @@ def set_shared_directory():
 
 @shared_dir_bp.route('/api/shared-directory/config', methods=['GET'])
 def get_shared_directory_config():
+    if not require_request_admin():
+        return jsonify({'success': False, 'error': 'Administrator access required'}), 403
     path = state_manager.get_shared_directory()
     return jsonify({'success': True, 'path': path})
 
 @shared_dir_bp.route('/api/shared-directory/files', methods=['GET'])
 def list_shared_directory_files():
+    if not require_request_trusted():
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
     shared_directory = state_manager.get_shared_directory()
     if not shared_directory:
         return jsonify({'success': False, 'error': 'Sharing not configured'}), 403
@@ -74,6 +81,8 @@ def list_shared_directory_files():
 
 @shared_dir_bp.route('/api/shared-directory/download', methods=['GET'])
 def download_shared_file():
+    if not require_request_trusted():
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
     shared_directory = state_manager.get_shared_directory()
     if not shared_directory:
         return jsonify({'success': False, 'error': 'Sharing not configured'}), 403

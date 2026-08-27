@@ -1,10 +1,10 @@
 from typing import List, Optional
-from app.repositories.db import db_manager
+from app.repositories.db import get_connection
 from app.models.models import Message, TransferItem
 
 class ChatRepository:
     def add_message(self, msg: Message) -> None:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             conn.execute(
                 """
                 INSERT INTO messages (id, username, message, channel, timestamp, encrypted, encryption_version, salt, nonce, type, dm_user, file_url, original_type, original_size)
@@ -19,7 +19,7 @@ class ChatRepository:
             conn.commit()
 
     def get_messages(self, channel: str) -> List[Message]:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.execute(
                 "SELECT * FROM messages WHERE channel = ? AND type != 'private' ORDER BY timestamp ASC",
                 (channel,)
@@ -38,7 +38,7 @@ class ChatRepository:
             ]
 
     def get_private_messages(self, user1: str, user2: str) -> List[Message]:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.execute(
                 """
                 SELECT * FROM messages 
@@ -62,7 +62,7 @@ class ChatRepository:
             ]
 
     def add_transfer_history(self, item: TransferItem) -> None:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             conn.execute(
                 """
                 INSERT INTO transfer_history (id, filename, size, hash, timestamp, type, direction)
@@ -73,7 +73,7 @@ class ChatRepository:
             conn.commit()
 
     def get_transfer_history(self, limit: int = 50) -> List[TransferItem]:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.execute(
                 "SELECT * FROM transfer_history ORDER BY timestamp DESC LIMIT ?",
                 (limit,)
@@ -89,6 +89,6 @@ class ChatRepository:
             ]
 
     def clear_history(self) -> None:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             conn.execute("DELETE FROM messages")
             conn.commit()

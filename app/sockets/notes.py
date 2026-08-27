@@ -1,6 +1,7 @@
 from flask import request
 from flask_socketio import emit
 from app.extensions import socketio
+from app.services.auth import require_socket_channel, require_socket_trusted
 from app.repositories.note_repo import NoteRepository
 
 note_repo = NoteRepository()
@@ -8,12 +9,18 @@ note_repo = NoteRepository()
 @socketio.on('get_notes')
 def handle_get_notes(data):
     channel = data.get('channel', 'general')
+    if not require_socket_channel(channel):
+        emit('security_error', {'message': 'Channel access denied'}, to=request.sid)
+        return
     notes = note_repo.list_notes(channel)
     emit('notes_list', {'channel': channel, 'notes': notes}, to=request.sid)
 
 @socketio.on('get_note_content')
 def handle_get_note_content(data):
     channel = data.get('channel', 'general')
+    if not require_socket_channel(channel):
+        emit('security_error', {'message': 'Channel access denied'}, to=request.sid)
+        return
     note_name = data.get('noteName', '').strip()
     if not note_name:
         return
@@ -22,7 +29,13 @@ def handle_get_note_content(data):
 
 @socketio.on('save_note')
 def handle_save_note(data):
+    if not require_socket_trusted():
+        emit('security_error', {'message': 'Authentication required'}, to=request.sid)
+        return
     channel = data.get('channel', 'general')
+    if not require_socket_channel(channel):
+        emit('security_error', {'message': 'Channel access denied'}, to=request.sid)
+        return
     note_name = data.get('noteName', '').strip()
     content = data.get('content', '')
     username = data.get('username', 'Anonymous')
@@ -41,7 +54,13 @@ def handle_save_note(data):
 
 @socketio.on('create_note')
 def handle_create_note(data):
+    if not require_socket_trusted():
+        emit('security_error', {'message': 'Authentication required'}, to=request.sid)
+        return
     channel = data.get('channel', 'general')
+    if not require_socket_channel(channel):
+        emit('security_error', {'message': 'Channel access denied'}, to=request.sid)
+        return
     note_name = data.get('noteName', '').strip()
     if not note_name:
         return
@@ -57,7 +76,13 @@ def handle_create_note(data):
 
 @socketio.on('delete_note')
 def handle_delete_note(data):
+    if not require_socket_trusted():
+        emit('security_error', {'message': 'Authentication required'}, to=request.sid)
+        return
     channel = data.get('channel', 'general')
+    if not require_socket_channel(channel):
+        emit('security_error', {'message': 'Channel access denied'}, to=request.sid)
+        return
     note_name = data.get('noteName', '').strip()
     if not note_name:
         return

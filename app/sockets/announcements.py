@@ -4,14 +4,15 @@ from flask_socketio import emit
 from pydantic import ValidationError
 
 from app.extensions import socketio
-from app.repositories.db import db_manager
+from app.services.auth import require_socket_admin, require_socket_trusted
+from app.repositories.db import get_connection
 from app.models.models import Announcement
 from app.schemas.validation import BroadcastAnnouncementSchema
 from app.constants import MAX_ANNOUNCEMENTS
 
 class AnnouncementRepository:
     def add_announcement(self, ann: Announcement) -> None:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             # Enforce max limit by deleting oldest items
             cursor = conn.execute("SELECT COUNT(*) as count FROM announcements")
             count = cursor.fetchone()['count']
@@ -33,7 +34,7 @@ class AnnouncementRepository:
             conn.commit()
 
     def get_announcements(self) -> list:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.execute("SELECT * FROM announcements ORDER BY timestamp DESC")
             rows = cursor.fetchall()
             return [Announcement.from_row(row) for row in rows]
@@ -42,6 +43,9 @@ ann_repo = AnnouncementRepository()
 
 @socketio.on('broadcast_announcement')
 def handle_broadcast_announcement(data):
+    if not require_socket_admin():
+        emit('security_error', {'message': 'Administrator access required'}, to=request.sid)
+        return
     try:
         schema = BroadcastAnnouncementSchema(**data)
     except ValidationError:
@@ -60,5 +64,8 @@ def handle_broadcast_announcement(data):
 
 @socketio.on('get_announcements')
 def handle_get_announcements():
+    if not require_socket_trusted():
+        emit('security_error', {'message': 'Authentication required'}, to=request.sid)
+        return
     announcements = ann_repo.get_announcements()
     emit('announcements_list', {'announcements': [ann.to_dict() for ann in announcements]}, to=request.sid)

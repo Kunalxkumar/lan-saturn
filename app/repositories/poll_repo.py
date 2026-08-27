@@ -1,12 +1,12 @@
 import json
 from typing import List, Optional
-from app.repositories.db import db_manager
+from app.repositories.db import get_connection
 from app.models.models import Poll
 
 class PollRepository:
     def add_poll(self, poll: Poll) -> None:
         options_json = json.dumps(poll.options)
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             conn.execute(
                 """
                 INSERT INTO polls (id, question, options, creator, closed, channel, timestamp)
@@ -17,7 +17,7 @@ class PollRepository:
             conn.commit()
 
     def get_poll(self, poll_id: str) -> Optional[Poll]:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.execute("SELECT * FROM polls WHERE id = ?", (poll_id,))
             row = cursor.fetchone()
             if not row:
@@ -43,7 +43,7 @@ class PollRepository:
 
     def get_channel_polls(self, channel: str) -> List[Poll]:
         polls = []
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.execute("SELECT id FROM polls WHERE channel = ?", (channel,))
             poll_ids = [row['id'] for row in cursor.fetchall()]
 
@@ -55,7 +55,7 @@ class PollRepository:
 
     def get_poll_votes(self, poll_id: str) -> dict:
         votes = {}
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             cursor = conn.execute("SELECT option_index, username FROM poll_votes WHERE poll_id = ?", (poll_id,))
             for row in cursor.fetchall():
                 opt_idx = row['option_index']
@@ -66,7 +66,7 @@ class PollRepository:
         return votes
 
     def vote(self, poll_id: str, option_index: int, username: str) -> None:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             # Delete user's previous votes for this poll
             conn.execute("DELETE FROM poll_votes WHERE poll_id = ? AND username = ?", (poll_id, username))
             # Insert the new vote
@@ -77,6 +77,6 @@ class PollRepository:
             conn.commit()
 
     def close_poll(self, poll_id: str) -> None:
-        with db_manager.get_connection() as conn:
+        with get_connection() as conn:
             conn.execute("UPDATE polls SET closed = 1 WHERE id = ?", (poll_id,))
             conn.commit()

@@ -1,19 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import sodium from 'libsodium-wrappers-sumo';
 import MessageList from './components/Chat/MessageList';
 import MessageComposer from './components/Chat/MessageComposer';
 import Sidebar from './components/Layout/Sidebar/Sidebar';
 import RightPanel from './components/Layout/RightPanel/RightPanel';
-import Layout from './components/Layout/Layout';
 import TopNavBar from './components/Layout/TopNavBar';
 import GlobalSidebar from './components/Layout/GlobalSidebar';
 import JoinChannelModal from './components/Modals/JoinChannelModal';
 import ChatHeader from './components/Chat/ChatHeader';
-import ThemeToggle from './components/ThemeToggle';
-import SmartSearch from './components/SmartSearch';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import { Poll, CreatePollModal } from './components/Poll';
-import TaskList from './components/TaskList';
 import SharedNotes from './components/SharedNotes';
 import FileBrowser from './components/FileBrowser';
 import TransferHistory from './components/TransferHistory';
@@ -23,20 +18,18 @@ import Calendar from './components/Calendar';
 import useSocket from './hooks/useSocket';
 import useChatMessages from './hooks/chat/useChatMessages';
 import useSocketEvents from './hooks/socket/useSocketEvents';
-import servers from './lib/servers';
 import useEncryption from './hooks/encryption/useEncryption';
 import { useAppStore, useUIStore, useChatStore, useSecurityStore } from './store/appStore';
 
 function App() {
     const [currentUsername, setCurrentUsername] = useState(localStorage.getItem('lanSaturn_username') || 'Anonymous');
-    const { theme, setTheme, activeServerId, setActiveServerId, activeChannel, setActiveChannel, activeView, setActiveView, activeDmUser, setActiveDmUser } = useAppStore();
-    const { searchQuery, setSearchQuery, showBroadcastInput, setShowBroadcastInput, showPollModal, setShowPollModal, showTransferHistory, setShowTransferHistory } = useUIStore();
+    const { activeChannel, setActiveChannel, activeView, setActiveView, activeDmUser, setActiveDmUser } = useAppStore();
+    const { searchQuery, setSearchQuery, showPollModal, setShowPollModal, showTransferHistory, setShowTransferHistory } = useUIStore();
     const { isTyping, setIsTyping, typingUser, setTypingUser, isUploading, setIsUploading, uploadStatus, setUploadStatus } = useChatStore();
     const { channelPasswords, setChannelPasswords, joiningChannel, setJoiningChannel, joinPassword, setJoinPassword, joinInvite, setJoinInvite } = useSecurityStore();
     const {
         encryptionPassphrase,
         setEncryptionPassphrase,
-        encryptionPassphraseRef,
         isEncrypted,
         cryptoReady,
         encryptText,
@@ -49,8 +42,6 @@ function App() {
     const [channelTasks, setChannelTasks] = useState([]);
 
     const messagesEndRef = useRef(null);
-    const activeChannelRef = useRef(activeChannel);
-    const typingTimeoutRef = useRef(null);
 
     const { socketRef, connectionStatus, users } = useSocket(activeChannel, currentUsername);
 
@@ -59,8 +50,7 @@ function App() {
         setMessages, 
         addMessage, 
         sendReaction, 
-        sendMessage, 
-        clearHistory 
+        sendMessage
     } = useChatMessages({
         socket: socketRef.current,
         encryption: {
@@ -95,26 +85,10 @@ function App() {
         channelPasswords
     });
 
-    const activeServer = useMemo(
-        () => servers.find(server => server.id === activeServerId) || servers[0],
-        [activeServerId]
-    );
-
     const availableDmUsers = useMemo(
         () => users.filter(user => user !== currentUsername && user !== 'Anonymous'),
         [users, currentUsername]
     );
-
-    const allDmUsers = useMemo(() => {
-        const dmUsers = new Set();
-        messages.forEach(msg => {
-            if (msg.type === 'private' && msg.dmUser && msg.dmUser !== 'Anonymous' && msg.dmUser !== currentUsername) {
-                dmUsers.add(msg.dmUser);
-            }
-        });
-        availableDmUsers.forEach(user => dmUsers.add(user));
-        return Array.from(dmUsers);
-    }, [messages, availableDmUsers, currentUsername]);
 
     // --- Effects ---
 
@@ -302,34 +276,6 @@ function App() {
 
     const handleTypingStop = () => {
         socketRef.current?.emit('typing_stop', { username: currentUsername });
-    };
-
-    const toggleTheme = () => {
-        const nextTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(nextTheme);
-        localStorage.setItem('theme', nextTheme);
-    };
-
-    const openServer = (serverId) => {
-        const server = servers.find(item => item.id === serverId) || servers[0];
-        setActiveServerId(server.id);
-        setActiveChannel(server.channels[0]);
-        setActiveView('server');
-        setActiveDmUser('');
-    };
-
-    const openDm = (username) => {
-        setActiveView('dm');
-        setActiveDmUser(username);
-    };
-
-    const broadcastAnnouncement = (text) => {
-        if (!text.trim() || !socketRef.current) return;
-        socketRef.current.emit('broadcast_announcement', {
-            text: text.trim(),
-            username: currentUsername
-        });
-        setShowBroadcastInput(false);
     };
 
     const dismissAnnouncement = (id) => {

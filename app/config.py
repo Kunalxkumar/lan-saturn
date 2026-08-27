@@ -16,6 +16,12 @@ class Config:
     NOTES_FOLDER = os.path.join(BASE_DIR, 'notes')
     MAX_CONTENT_LENGTH = MAX_UPLOAD_SIZE
     DATABASE_PATH = os.path.join(BASE_DIR, 'lan_saturn.db')
+    SOCKET_ALLOWED_ORIGINS = [
+        'http://127.0.0.1:5000',
+        'http://localhost:5000',
+        'http://127.0.0.1:5173',
+        'http://localhost:5173'
+    ]
 
     @classmethod
     def init_app(cls, app):
