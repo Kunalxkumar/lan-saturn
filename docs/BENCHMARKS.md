@@ -1,7 +1,7 @@
 # LAN Saturn Transfer Benchmarks
 
 **Version:** Step 1 Benchmark Foundation  
-**Harness Script:** [`benchmarks/transfer_benchmark.py`](file:///w:/Project/lan-saturn-main/benchmarks/transfer_benchmark.py)
+**Harness Script:** [`benchmarks/transfer_benchmark.py`](../benchmarks/transfer_benchmark.py)
 
 ---
 

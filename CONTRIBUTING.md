@@ -37,10 +37,26 @@ Thank you for helping improve LAN Saturn! We welcome contributions to peer disco
 - **Accurate Claims**: Do not claim performance numbers or transport features unless verified by codebase implementation and benchmark harnesses.
 - **Security First**: Input validation is mandatory on all network boundaries. Never expose secrets or private keys over unauthenticated channels.
 - **Preserve Test Coverage**: All existing unit and security regression tests must pass.
+- **Discuss Major Changes**: Before implementing significant architectural changes, open an issue to discuss the proposed approach.
 
 ---
 
-## 3. Pull Request Guidelines
+## 3. Areas for Contribution
+
+We welcome contributions across several core project areas:
+
+- **Frontend / UX**: React, TypeScript, Tailwind styling, accessibility, and desktop ergonomics.
+- **Backend**: Python, Flask, Socket.IO routes, event handling, and data models.
+- **Peer Discovery**: UDP broadcast mechanisms, packet parsing, and peer lifecycle deduplication.
+- **File Transfer**: HTTP byte-range serving, chunking, checksum verification, and resumability.
+- **Security**: Authentication boundaries, input validation, and libsodium cryptographic implementations.
+- **Testing**: Unit tests, security regression coverage, and automated integration harnesses.
+- **Documentation**: Architecture specifications, API references, guides, and deployment notes.
+- **Windows Packaging**: PyInstaller bundling, Inno Setup wizards, and launcher lifecycle management.
+
+---
+
+## 4. Pull Request Guidelines
 
 - Ensure `python -m pytest -v tests/` passes 100%.
 - Keep PRs focused on single tasks or milestone steps.

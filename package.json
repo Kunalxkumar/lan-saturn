@@ -1,7 +1,7 @@
 {
-    "name": "lan-saturn-react",
-    "version": "1.0.0",
-    "description": "LAN Saturn - Local Chat App with React",
+    "name": "lan-saturn",
+    "version": "1.1.0",
+    "description": "LAN Saturn — local-first file sharing, messaging, and collaboration for Windows",
     "type": "module",
     "main": "src/index.tsx",
     "scripts": {

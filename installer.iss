@@ -1,7 +1,7 @@
 ; Script generated for LAN Saturn Inno Setup Installer
 
 #define MyAppName "LAN Saturn"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "LAN Saturn Team"
 #define MyAppURL "http://127.0.0.1:5000"
 #define MyAppExeName "LAN-Saturn.exe"
@@ -15,8 +15,8 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 VersionInfoCompany={#MyAppPublisher}
-VersionInfoDescription=LAN Saturn Local Chat & File Sharing Application
-VersionInfoVersion=1.0.0.0
+VersionInfoDescription=LAN Saturn Local Network Collaboration Application
+VersionInfoVersion=1.1.0.0
 VersionInfoCopyright=Copyright (c) 2026 LAN Saturn Team
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
