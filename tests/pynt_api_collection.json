@@ -1,0 +1,313 @@
+{
+  "info": {
+    "_postman_id": "lan-saturn-phase1-pynt-security",
+    "name": "LAN Saturn Security & API Hardening Collection",
+    "description": "Comprehensive security testing collection for Pynt and automated DAST, covering authentication, authorization, contiguous chunk uploads, BOLA, path traversal, and file safety.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5000",
+      "type": "string"
+    },
+    {
+      "key": "testUploadId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "File Upload & Transfer",
+      "item": [
+        {
+          "name": "Initialize Chunked Upload Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filename\": \"test_transfer.bin\",\n  \"totalSize\": 1048576,\n  \"expectedHash\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/init",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "init"]
+            },
+            "description": "Initializes a stateful upload session with authoritative offset tracking and incremental hash validation."
+          }
+        },
+        {
+          "name": "Upload Chunk (Strict Contiguous Offset)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "uploadId",
+                  "value": "{{testUploadId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload-chunk",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload-chunk"]
+            },
+            "description": "Appends a chunk at the exact server-authoritative offset. Rejects gaps, negative values, and non-contiguous writes."
+          }
+        },
+        {
+          "name": "One-Shot Legacy Upload",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload"]
+            },
+            "description": "Standard file upload with authentication check and MIME sanitization."
+          }
+        },
+        {
+          "name": "Query Upload Session Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/status/{{testUploadId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "status", "{{testUploadId}}"]
+            },
+            "description": "Returns authoritative resume point and session status."
+          }
+        },
+        {
+          "name": "Cancel Upload Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uploadId\": \"{{testUploadId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload", "cancel"]
+            },
+            "description": "Aborts session and cleans up partial staging files."
+          }
+        },
+        {
+          "name": "Download Stored File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/files/sample.txt",
+              "host": ["{{baseUrl}}"],
+              "path": ["files", "sample.txt"]
+            },
+            "description": "Safe file retrieval. Blocks directory traversal, hidden files, and .partial staging files."
+          }
+        },
+        {
+          "name": "Get Transfer History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/transfer-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "transfer-history"]
+            },
+            "description": "Retrieves finalized file transfer audit records."
+          }
+        },
+        {
+          "name": "Preview ZIP Contents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/zip-preview/archive.zip",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zip-preview", "archive.zip"]
+            },
+            "description": "Safely inspects ZIP archive contents with max entry and size constraints to prevent zip bombs."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Peer Trust & Handshake",
+      "item": [
+        {
+          "name": "List Discovered Peers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/peers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "peers"]
+            },
+            "description": "Lists all active discovered local peers."
+          }
+        },
+        {
+          "name": "Request Peer Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"192.168.1.50\",\n  \"port\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/peers/connect",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "peers", "connect"]
+            },
+            "description": "Initiates outbound handshake to peer IP."
+          }
+        },
+        {
+          "name": "Approve Peer Trust (Admin/Local Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"192.168.1.50\",\n  \"userAgent\": \"TestClient/1.0\",\n  \"trusted\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/peers/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "peers", "approve"]
+            },
+            "description": "Elevates remote device trust. Requires local loopback administrator identity."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shared Directory Management",
+      "item": [
+        {
+          "name": "Get Shared Directory Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shared-directory/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shared-directory", "config"]
+            },
+            "description": "Reads current shared directory path configuration."
+          }
+        },
+        {
+          "name": "Set Shared Directory Config (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"path\": \"/safe/shared/path\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shared-directory/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shared-directory", "config"]
+            },
+            "description": "Configures directory root. Strictly restricted from remote tampering."
+          }
+        },
+        {
+          "name": "List Shared Directory Files",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shared-directory/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shared-directory", "files"]
+            },
+            "description": "Lists contents inside shared directory boundary."
+          }
+        },
+        {
+          "name": "Download Shared File (Confinement Verified)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shared-directory/download?file=readme.txt",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shared-directory", "download"],
+              "query": [
+                {
+                  "key": "file",
+                  "value": "readme.txt"
+                }
+              ]
+            },
+            "description": "Downloads file within shared root. Rejects path traversal attempts."
+          }
+        }
+      ]
+    }
+  ]
+}

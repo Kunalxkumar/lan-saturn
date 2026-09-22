@@ -1,4 +1,4 @@
-import random
+import secrets
 import string
 from flask import request
 from flask_socketio import emit
@@ -33,8 +33,9 @@ def handle_generate_invite(data):
         emit('security_error', {'message': 'Administrator access required'}, to=request.sid)
         return
     channel = data.get('channel', 'general')
-    # Generate random 6 character code
-    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    # Generate cryptographically secure random 6 character code
+    alphabet = string.ascii_uppercase + string.digits
+    code = ''.join(secrets.choice(alphabet) for _ in range(6))
     security_repo.create_invite_code(channel, code)
     emit('invite_generated', {'channel': channel, 'code': code}, to=request.sid)
 
