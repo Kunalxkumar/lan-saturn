@@ -25,6 +25,7 @@ logs/
 
 # Database & runtime files
 *.db
+*.db-*
 *.sqlite
 *.sqlite3
 uploads/*
@@ -35,4 +36,10 @@ notes/*
 # Build Artifacts & Intermediate Outputs
 build/
 dist/
+installers/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/
+graphify-out/
 *.spec
+

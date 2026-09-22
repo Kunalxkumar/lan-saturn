@@ -159,3 +159,44 @@ def test_oversized_discovery_packet():
     assert len(raw_bytes) > 2048
     result = discovery.parse_discovery_packet(raw_bytes, "192.168.1.100")
     assert result is None
+
+
+def test_concurrent_peer_announcements_and_cleanup():
+    import threading
+    discovery.discovered_peers.clear()
+    errors = []
+
+    def writer():
+        for i in range(50):
+            try:
+                discovery.process_peer_announcement(
+                    {
+                        "device_id": f"node-{i % 10}",
+                        "name": f"Node {i}",
+                        "ip": f"192.168.1.{10 + (i % 10)}",
+                        "port": 5000,
+                        "capabilities": ["chat"],
+                    },
+                    time.time(),
+                )
+            except Exception as e:
+                errors.append(e)
+
+    def cleaner():
+        for _ in range(50):
+            try:
+                discovery.cleanup_stale_peers(time.time() + 20.0)
+                discovery.get_servers()
+            except Exception as e:
+                errors.append(e)
+
+    threads = [threading.Thread(target=writer) for _ in range(3)] + [
+        threading.Thread(target=cleaner) for _ in range(3)
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert len(errors) == 0
+

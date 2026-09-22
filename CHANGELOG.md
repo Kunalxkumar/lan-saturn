@@ -5,6 +5,23 @@ All notable changes to LAN Saturn are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-09-22
+
+### Security
+- **Mitigated `X-Lan-Saturn-Remote-Addr` Header Spoofing**: Secured remote address resolution in peer authentication workflows against untrusted reverse-proxy and client-forged headers.
+
+### Added
+- **Frontend Multi-Gigabyte Chunked Upload Support**: Added resumable client-side chunk streaming engine capable of reliable multi-gigabyte file transfers with progress tracking and validation.
+- **SQLite WAL Mode & Database Indexing**: Configured Write-Ahead Logging (WAL) and targeted performance indexes for high-throughput concurrent database operations.
+
+### Changed
+- **Chunked Upload Engine Hardening**: Hardened server-side chunked upload session management, offset integrity validation, and atomic file finalization.
+
+### Fixed
+- **UDP Discovery Thread Safety**: Resolved concurrency race conditions in background UDP peer discovery listener and broadcast routines.
+
+---
+
 ## [1.1.0] - 2026-08-27
 
 ### Added

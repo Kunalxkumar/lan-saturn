@@ -20,6 +20,7 @@ import useChatMessages from './hooks/chat/useChatMessages';
 import useSocketEvents from './hooks/socket/useSocketEvents';
 import useEncryption from './hooks/encryption/useEncryption';
 import { useAppStore, useUIStore, useChatStore, useSecurityStore } from './store/appStore';
+import { uploadFileInChunks } from './lib/chunkedUpload';
 
 function App() {
     const [currentUsername, setCurrentUsername] = useState(localStorage.getItem('lanSaturn_username') || 'Anonymous');
@@ -146,18 +147,69 @@ function App() {
             return;
         }
 
-        if (!encryptionPassphrase) {
-            setUploadStatus('Enter the shared E2EE passphrase before uploading files.');
+        const maxFileSize = 4 * 1024 * 1024 * 1024;
+        if (file.size > maxFileSize) {
+            setUploadStatus('File is too large. Maximum size is 4 GB.');
+            return;
+        }
+
+        const isLargeFile = file.size > 50 * 1024 * 1024;
+
+        if (isLargeFile || !encryptionPassphrase) {
+            setIsUploading(true);
+            setUploadStatus(`Uploading ${file.name}...`);
+
+            try {
+                const result = await uploadFileInChunks(file, {
+                    onProgress: (percent) => setUploadStatus('Uploading ' + file.name + ' (' + percent + '%)...')
+                });
+
+                if (result && result.success) {
+                    const timestamp = new Date().toISOString();
+
+                    socketRef.current?.emit('file_share', {
+                        filename: result.filename,
+                        fileUrl: result.fileUrl,
+                        originalType: file.type || 'application/octet-stream',
+                        originalSize: file.size,
+                        encryptedFile: false,
+                        username: currentUsername,
+                        channel: activeChannel,
+                        timestamp
+                    });
+
+                    addMessage({
+                        id: `file_${Date.now()}_${Math.random()}`,
+                        type: 'file',
+                        username: currentUsername,
+                        filename: result.filename,
+                        fileUrl: result.fileUrl,
+                        originalType: file.type || 'application/octet-stream',
+                        originalSize: file.size,
+                        encryptedFile: false,
+                        decryptedUrl: URL.createObjectURL(file),
+                        decryptedFilename: file.name,
+                        channel: activeChannel,
+                        timestamp,
+                        isOwn: true
+                    });
+
+                    setUploadStatus(`Uploaded ${file.name}`);
+                    setTimeout(() => setUploadStatus(''), 3000);
+                } else {
+                    setUploadStatus('Upload failed');
+                }
+            } catch (error: any) {
+                console.error('Error uploading file:', error);
+                setUploadStatus(error?.message || 'Upload failed. Try again.');
+            } finally {
+                setIsUploading(false);
+            }
             return;
         }
 
         if (!cryptoReady) {
             setUploadStatus('Encryption is still loading. Try again in a moment.');
-            return;
-        }
-
-        if (file.size > 50 * 1024 * 1024) {
-            setUploadStatus('File is too large. Maximum size is 50 MB.');
             return;
         }
 
