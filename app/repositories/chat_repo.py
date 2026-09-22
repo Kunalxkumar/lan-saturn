@@ -65,7 +65,7 @@ class ChatRepository:
         with get_connection() as conn:
             conn.execute(
                 """
-                INSERT INTO transfer_history (id, filename, size, hash, timestamp, type, direction)
+                INSERT OR IGNORE INTO transfer_history (id, filename, size, hash, timestamp, type, direction)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (item.id, item.filename, item.size, item.hash, item.timestamp, item.type, item.direction)
