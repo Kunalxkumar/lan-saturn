@@ -20,7 +20,8 @@ import useChatMessages from './hooks/chat/useChatMessages';
 import useSocketEvents from './hooks/socket/useSocketEvents';
 import useEncryption from './hooks/encryption/useEncryption';
 import { useAppStore, useUIStore, useChatStore, useSecurityStore } from './store/appStore';
-import { uploadFileInChunks } from './lib/chunkedUpload';
+import { uploadFileInChunks, cancelChunkedUpload } from './lib/chunkedUpload';
+import { decryptStreamFile, STREAM_CRYPTO_VERSION } from './lib/crypto';
 
 function App() {
     const [currentUsername, setCurrentUsername] = useState(localStorage.getItem('lanSaturn_username') || 'Anonymous');
@@ -138,6 +139,18 @@ function App() {
 
 
 
+    const uploadAbortControllerRef = useRef(null);
+
+    const handleCancelUpload = () => {
+        if (uploadAbortControllerRef.current) {
+            uploadAbortControllerRef.current.abort();
+            uploadAbortControllerRef.current = null;
+            setUploadStatus('Upload cancelled.');
+            setIsUploading(false);
+            setTimeout(() => setUploadStatus(''), 3000);
+        }
+    };
+
     const handleFileUpload = async (file) => {
         if (!file) return;
 
@@ -153,95 +166,46 @@ function App() {
             return;
         }
 
-        const isLargeFile = file.size > 50 * 1024 * 1024;
-
-        if (isLargeFile || !encryptionPassphrase) {
-            setIsUploading(true);
-            setUploadStatus(`Uploading ${file.name}...`);
-
-            try {
-                const result = await uploadFileInChunks(file, {
-                    onProgress: (percent) => setUploadStatus('Uploading ' + file.name + ' (' + percent + '%)...')
-                });
-
-                if (result && result.success) {
-                    const timestamp = new Date().toISOString();
-
-                    socketRef.current?.emit('file_share', {
-                        filename: result.filename,
-                        fileUrl: result.fileUrl,
-                        originalType: file.type || 'application/octet-stream',
-                        originalSize: file.size,
-                        encryptedFile: false,
-                        username: currentUsername,
-                        channel: activeChannel,
-                        timestamp
-                    });
-
-                    addMessage({
-                        id: `file_${Date.now()}_${Math.random()}`,
-                        type: 'file',
-                        username: currentUsername,
-                        filename: result.filename,
-                        fileUrl: result.fileUrl,
-                        originalType: file.type || 'application/octet-stream',
-                        originalSize: file.size,
-                        encryptedFile: false,
-                        decryptedUrl: URL.createObjectURL(file),
-                        decryptedFilename: file.name,
-                        channel: activeChannel,
-                        timestamp,
-                        isOwn: true
-                    });
-
-                    setUploadStatus(`Uploaded ${file.name}`);
-                    setTimeout(() => setUploadStatus(''), 3000);
-                } else {
-                    setUploadStatus('Upload failed');
-                }
-            } catch (error: any) {
-                console.error('Error uploading file:', error);
-                setUploadStatus(error?.message || 'Upload failed. Try again.');
-            } finally {
-                setIsUploading(false);
-            }
-            return;
-        }
-
-        if (!cryptoReady) {
+        const shouldEncrypt = Boolean(encryptionPassphrase && encryptionPassphrase.trim().length > 0);
+        if (shouldEncrypt && !cryptoReady) {
             setUploadStatus('Encryption is still loading. Try again in a moment.');
             return;
         }
 
+        const abortController = new AbortController();
+        uploadAbortControllerRef.current = abortController;
+
         setIsUploading(true);
-        setUploadStatus(`Encrypting ${file.name}...`);
+        setUploadStatus(shouldEncrypt ? `Encrypting & uploading ${file.name}...` : `Uploading ${file.name}...`);
 
         try {
-            const plainBytes = new Uint8Array(await file.arrayBuffer());
-            const encryptedFile = encryptBytes(plainBytes, encryptionPassphrase);
-            const encryptedBlob = new Blob([encryptedFile.cipherBytes as unknown as BlobPart], { type: 'application/octet-stream' });
-            const formData = new FormData();
-            formData.append('file', encryptedBlob, `${file.name}.lsenc`);
-            setUploadStatus(`Uploading encrypted ${file.name}...`);
-
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData
+            const result = await uploadFileInChunks(file, {
+                passphrase: shouldEncrypt ? encryptionPassphrase.trim() : undefined,
+                signal: abortController.signal,
+                onProgress: (prog) => {
+                    const speedText = prog.speedMBs > 0 ? ` • ${prog.speedMBs} MB/s` : '';
+                    const etaText = prog.etaSeconds > 0 ? ` • ETA: ${prog.etaSeconds}s` : '';
+                    const stateLabel = prog.state === 'verifying' 
+                        ? 'Verifying SHA-256' 
+                        : (shouldEncrypt ? 'Encrypting & uploading' : 'Uploading');
+                    setUploadStatus(`${stateLabel} ${file.name} (${prog.percent}%${speedText}${etaText})`);
+                }
             });
-            const result = await response.json();
 
-            if (response.ok && result.success) {
+            if (result && result.success) {
                 const timestamp = new Date().toISOString();
 
-                socketRef.current.emit('file_share', {
+                socketRef.current?.emit('file_share', {
                     filename: result.filename,
                     fileUrl: result.fileUrl,
                     originalType: file.type || 'application/octet-stream',
                     originalSize: file.size,
-                    encryptedFile: true,
-                    encryptionVersion: encryptedFile.encryptionVersion,
-                    salt: encryptedFile.salt,
-                    nonce: encryptedFile.nonce,
+                    encryptedFile: result.encryptedFile,
+                    encryptionVersion: result.encryptionVersion,
+                    salt: result.salt,
+                    header: result.header,
+                    chunkSize: result.chunkSize,
+                    hash: result.hash,
                     username: currentUsername,
                     channel: activeChannel,
                     timestamp
@@ -255,10 +219,12 @@ function App() {
                     fileUrl: result.fileUrl,
                     originalType: file.type || 'application/octet-stream',
                     originalSize: file.size,
-                    encryptedFile: true,
-                    encryptionVersion: encryptedFile.encryptionVersion,
-                    salt: encryptedFile.salt,
-                    nonce: encryptedFile.nonce,
+                    encryptedFile: result.encryptedFile,
+                    encryptionVersion: result.encryptionVersion,
+                    salt: result.salt,
+                    header: result.header,
+                    chunkSize: result.chunkSize,
+                    hash: result.hash,
                     decryptedUrl: URL.createObjectURL(file),
                     decryptedFilename: file.name,
                     channel: activeChannel,
@@ -266,16 +232,21 @@ function App() {
                     isOwn: true
                 });
 
-                setUploadStatus(`Encrypted and uploaded ${file.name}`);
+                setUploadStatus(`Uploaded ${file.name}`);
                 setTimeout(() => setUploadStatus(''), 3000);
             } else {
-                setUploadStatus(result.error || 'Upload failed');
+                setUploadStatus('Upload failed');
             }
-        } catch (error) {
-            console.error('Error encrypting/uploading file:', error);
-            setUploadStatus('Encrypted upload failed. Check the passphrase and try again.');
+        } catch (error: any) {
+            console.error('Error uploading file:', error);
+            if (error?.message === 'Upload cancelled') {
+                setUploadStatus('Upload cancelled');
+            } else {
+                setUploadStatus(error?.message || 'Upload failed. Try again.');
+            }
         } finally {
             setIsUploading(false);
+            uploadAbortControllerRef.current = null;
         }
     };
 
@@ -297,17 +268,29 @@ function App() {
         try {
             const response = await fetch(message.fileUrl);
             const encryptedBytesData = new Uint8Array(await response.arrayBuffer());
-            const plainBytes = decryptBytes(
-                encryptedBytesData,
-                encryptionPassphrase,
-                message.salt,
-                message.nonce
-            );
+
+            let plainBytes;
+            if (message.encryptionVersion === STREAM_CRYPTO_VERSION) {
+                plainBytes = decryptStreamFile(
+                    encryptedBytesData,
+                    encryptionPassphrase.trim(),
+                    message.salt,
+                    message.chunkSize || (2 * 1024 * 1024)
+                );
+            } else {
+                plainBytes = decryptBytes(
+                    encryptedBytesData,
+                    encryptionPassphrase.trim(),
+                    message.salt,
+                    message.nonce
+                );
+            }
+
             const blob = new Blob([plainBytes as unknown as BlobPart], {
                 type: message.originalType || 'application/octet-stream'
             });
             const decryptedUrl = URL.createObjectURL(blob);
-            const decryptedFilename = message.filename.replace(/\.lsenc$/i, '');
+            const decryptedFilename = (message.decryptedFilename || message.filename).replace(/\.lsenc$/i, '');
 
             setMessages(prev => prev.map(item => (
                 item.id === message.id
@@ -492,25 +475,42 @@ function App() {
                                     Choose an online user to start a DM.
                                 </div>
                             ) : (
-                                <div className="flex items-end gap-2 p-3 bg-gradient-to-t from-[#0D1117] via-[#0D1117] to-transparent flex-none relative z-20">
-                                    <MessageComposer
-                                        activeChannel={activeChannel}
-                                        onSendMessage={sendMessage}
-                                        onTyping={handleTyping}
-                                        onTypingStop={handleTypingStop}
-                                        onFileUpload={handleFileUpload}
-                                        isUploading={isUploading}
-                                        uploadStatus={uploadStatus}
-                                    />
-                                    {activeView === 'server' && (
-                                        <button 
-                                            className="h-11 w-11 bg-[#181c22] hover:bg-[#5865f2] hover:text-white text-lg rounded-xl transition-colors flex items-center justify-center shrink-0 border border-[#30363d] shadow-md text-[#c6c5d7] cursor-pointer"
-                                            onClick={() => setShowPollModal(true)} 
-                                            title="Create Poll"
-                                        >
-                                            📊
-                                        </button>
+                                <div className="flex flex-col p-3 bg-gradient-to-t from-[#0D1117] via-[#0D1117] to-transparent flex-none relative z-20">
+                                    {isUploading && (
+                                        <div className="mx-2 mb-2 px-3 py-2 rounded-lg bg-[#161b22] border border-[#30363d] flex items-center justify-between shadow-md">
+                                            <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 truncate mr-2">
+                                                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+                                                <span className="truncate">{uploadStatus}</span>
+                                            </div>
+                                            <button
+                                                onClick={handleCancelUpload}
+                                                className="text-xs bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded transition-colors font-sans shrink-0 cursor-pointer"
+                                                title="Cancel ongoing upload"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
                                     )}
+                                    <div className="flex items-end gap-2">
+                                        <MessageComposer
+                                            activeChannel={activeChannel}
+                                            onSendMessage={sendMessage}
+                                            onTyping={handleTyping}
+                                            onTypingStop={handleTypingStop}
+                                            onFileUpload={handleFileUpload}
+                                            isUploading={isUploading}
+                                            uploadStatus={uploadStatus}
+                                        />
+                                        {activeView === 'server' && (
+                                            <button 
+                                                className="h-11 w-11 bg-[#181c22] hover:bg-[#5865f2] hover:text-white text-lg rounded-xl transition-colors flex items-center justify-center shrink-0 border border-[#30363d] shadow-md text-[#c6c5d7] cursor-pointer"
+                                                onClick={() => setShowPollModal(true)} 
+                                                title="Create Poll"
+                                            >
+                                                📊
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </>

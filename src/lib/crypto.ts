@@ -71,4 +71,73 @@ export function decryptText(encryptedData, passphrase, salt, nonce) {
     return sodium.to_string(plainBytes);
 }
 
-export { toBase64, fromBase64, CRYPTO_VERSION, CRYPTO_CONTEXT };
+export const STREAM_CRYPTO_VERSION = 'sodium-secretstream-xchacha20poly1305-v1';
+
+export function initStreamEncryption(passphrase) {
+    const salt = sodium.randombytes_buf(sodium.crypto_pwhash_SALTBYTES);
+    const key = deriveKey(passphrase, salt);
+    const streamPush = sodium.crypto_secretstream_xchacha20poly1305_init_push(key);
+    return {
+        state: streamPush.state,
+        header: toBase64(streamPush.header),
+        salt: toBase64(salt),
+        version: STREAM_CRYPTO_VERSION
+    };
+}
+
+export function encryptStreamChunk(state, plainBytes, isFinal = false) {
+    const tag = isFinal
+        ? sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL
+        : sodium.crypto_secretstream_xchacha20poly1305_TAG_MESSAGE;
+    return sodium.crypto_secretstream_xchacha20poly1305_push(state, plainBytes, null, tag);
+}
+
+export function initStreamDecryption(passphrase, saltBase64, headerBase64) {
+    const salt = fromBase64(saltBase64);
+    const header = fromBase64(headerBase64);
+    const key = deriveKey(passphrase, salt);
+    return sodium.crypto_secretstream_xchacha20poly1305_init_pull(header, key);
+}
+
+export function decryptStreamFile(
+    encryptedBytes,
+    passphrase,
+    saltBase64,
+    plainChunkSize = 2 * 1024 * 1024
+) {
+    if (encryptedBytes.length < 24) {
+        throw new Error('Encrypted file payload too short: missing stream header');
+    }
+    const header = encryptedBytes.subarray(0, 24);
+    const salt = fromBase64(saltBase64);
+    const key = deriveKey(passphrase, salt);
+    const pullState = sodium.crypto_secretstream_xchacha20poly1305_init_pull(header, key);
+
+    const cipherChunkSize = plainChunkSize + sodium.crypto_secretstream_xchacha20poly1305_ABYTES;
+    const plainChunks = [];
+    let totalPlainLen = 0;
+
+    let offset = 24;
+    while (offset < encryptedBytes.length) {
+        const nextOffset = Math.min(offset + cipherChunkSize, encryptedBytes.length);
+        const chunkCipher = encryptedBytes.subarray(offset, nextOffset);
+        const pullRes = sodium.crypto_secretstream_xchacha20poly1305_pull(pullState, chunkCipher, null);
+        plainChunks.push(pullRes.message);
+        totalPlainLen += pullRes.message.length;
+        offset = nextOffset;
+        if (pullRes.tag === sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL) {
+            break;
+        }
+    }
+
+    const result = new Uint8Array(totalPlainLen);
+    let currentPos = 0;
+    for (const chunk of plainChunks) {
+        result.set(chunk, currentPos);
+        currentPos += chunk.length;
+    }
+    return result;
+}
+
+export { toBase64, fromBase64, CRYPTO_VERSION, CRYPTO_CONTEXT, sodium };
+
