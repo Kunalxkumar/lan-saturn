@@ -104,3 +104,52 @@ To prepare for Step 2 (Bluetooth-assisted discovery), we evaluated 6 technical a
 - **Primitives**: Argon2id for key derivation, XChaCha20-Poly1305 for authenticated encryption (`libsodium-wrappers-sumo`).
 - **Nonce Safety**: `sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES)` generates a fresh 192-bit random nonce for every message/file buffer. 192-bit nonces prevent nonce reuse collisions even with random generation.
 - **Recommendation**: Retain current cryptographic primitives. Do not invent custom ciphers or alter sodium wrappers without security review.
+
+---
+
+## 6. Phase 1 — v1.2.1 Security & Transfer Hardening Architecture
+
+### 6.1 Upload Session Model
+In v1.2.1, ad-hoc filename-based uploads were replaced by an explicit `UploadSession` architecture managed by `UploadSessionManager` (`app/services/upload_session.py`):
+- **Upload ID**: Every transfer initiates via `POST /api/upload/init`, receiving a unique UUID `upload_id`. Filenames provided by clients are sanitized with `secure_filename` and mapped to non-colliding server storage paths (`uuid.uuid4().hex.ext`).
+- **Session Lifecycle States**: Sessions transition strictly through `active -> completed`, `cancelled`, `expired`, or `failed`.
+
+### 6.2 Strict Contiguous Offset Validation
+To prevent sparse file exploitation, payload corruption, or arbitrary byte offsets:
+- The server maintains an authoritative `current_offset`.
+- Incoming chunks must strictly satisfy `offset == current_offset`. Gaps (`offset > current_offset`) and retrogressions (`offset < current_offset`) are rejected with HTTP 409.
+- Total transfer bounds are enforced: `current_offset + chunk_length <= total_size <= MAX_UPLOAD_SIZE (4 GB)`.
+
+### 6.3 Streaming End-to-End Encryption (E2EE) Pipeline
+The v1.2.0 bypass where files > 50 MB were uploaded unencrypted has been eliminated:
+```text
+User selects file
+       ↓
+Encryption decision
+       ↓
+Stream encryption (libsodium secretstream XChaCha20-Poly1305)
+       ↓
+Contiguous chunked upload (UUID session, 2 MB slices)
+       ↓
+Authenticated server
+       ↓
+Staging in .partial/<upload_id>.part
+       ↓
+Cryptographic verification (SHA-256)
+       ↓
+Atomic promotion to uploads/<stored_filename>
+       ↓
+Client-side stream decryption (pull chunk by chunk)
+```
+Browser memory consumption is bounded to single chunk buffers (2 MB) rather than reading multi-gigabyte files into RAM.
+
+### 6.4 Per-Upload Concurrency Isolation
+- Each active upload session has a dedicated `threading.RLock`.
+- Simultaneous chunk requests targeting the same `upload_id` are strictly serialized, ensuring atomic offset advancement and hasher updates.
+- Distinct upload sessions proceed fully in parallel across multiple worker threads.
+
+### 6.5 Atomic Finalization & Storage Isolation
+- In-progress chunks are quarantined in `uploads/.partial/<upload_id>.part`.
+- Download routes (`/files/<filename>`) explicitly deny access to `.partial` paths and non-finalized uploads.
+- Upon receiving the final byte (`current_offset == total_size`), SHA-256 hashes are verified, and `shutil.move` atomically promotes the file to `uploads/`. On hash mismatch or cancellation, staging files are unlinked immediately.
+

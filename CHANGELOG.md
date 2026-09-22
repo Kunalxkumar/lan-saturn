@@ -5,6 +5,27 @@ All notable changes to LAN Saturn are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-09-22 (Phase 1 — Security & Transfer Hardening)
+
+### Security
+- **Eliminated E2EE Bypass for Large Files**: Removed unencrypted fallback logic that downgraded transfers over 50 MB or chunked paths to plaintext. Files are now stream-encrypted chunk-by-chunk using Argon2id and libsodium `crypto_secretstream_xchacha20poly1305`.
+- **Cryptographically Secure Random Invites**: Replaced pseudo-random generation with `secrets.choice` for channel invite tokens, resolving Bandit B311 advisory.
+- **Confinement & Staging Isolation**: Sealed staging files inside `.partial/<upload_id>.part`, strictly blocking path traversal attempts, dotfiles, and partial upload downloads.
+
+### Added
+- **Stateful Upload Sessions**: Created explicit `UploadSession` architecture with UUID-keyed sessions, state machine (`active`, `completed`, `cancelled`, `expired`, `failed`), and server-authoritative offset management.
+- **Per-Upload Synchronization Locks**: Added per-upload `RLock` serialization to eliminate race conditions during concurrent chunk transmissions while allowing parallel distinct transfers.
+- **Atomic File Finalization**: Staging files are atomically promoted via `shutil.move` only after all contiguous bytes arrive and SHA-256 cryptographic verification succeeds.
+- **Server-Authoritative Resumption & Cancellation**: Added `GET /api/upload/status/<upload_id>` for accurate resume points and `POST /api/upload/cancel` for immediate staging cleanup.
+- **Receiver Integrity Verification in Benchmarks**: Benchmark harness now independently downloads and computes real SHA-256 digests of server-stored payloads before asserting `PASS`.
+- **Pynt Security API Collection**: Created Postman/Pynt test collection `tests/pynt_api_collection.json` covering 13 critical API endpoints for automated vulnerability assessment.
+
+### Changed
+- **Contiguous Offset Enforcement**: Server strictly enforces `offset == current_offset`, rejecting gaps, negative offsets, and backwards overwrite attempts with HTTP 409.
+- **Measured Transfer Telemetry**: UI and benchmark harness calculate speed (MB/s and Mbps) and ETA using real measured bytes and clock deltas rather than percentage interpolations.
+
+---
+
 ## [1.2.0] - 2026-09-22
 
 ### Security
