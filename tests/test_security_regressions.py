@@ -80,3 +80,21 @@ def test_remote_socket_cannot_clear_global_history(monkeypatch):
     chat.handle_clear_chat_history()
 
     assert any(name == "security_error" for name, _payload, _kwargs in captured)
+
+
+def test_spoofed_remote_addr_header_ignored_in_production(app, tmp_path):
+    app.config["TESTING"] = False
+    try:
+        client = app.test_client()
+        session = create_session("192.168.1.100", "attacker-browser")
+        client.set_cookie(SESSION_COOKIE_NAME, session["id"])
+        response = client.post(
+            "/api/shared-directory/config",
+            json={"path": str(tmp_path)},
+            environ_overrides={"REMOTE_ADDR": "192.168.1.100"},
+            headers={"X-Lan-Saturn-Remote-Addr": "127.0.0.1", "User-Agent": "attacker-browser"},
+        )
+        assert response.status_code == 403
+    finally:
+        app.config["TESTING"] = True
+

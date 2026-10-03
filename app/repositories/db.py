@@ -13,6 +13,8 @@ def set_db_path(db_path):
 def get_connection():
     conn = sqlite3.connect(_db_path)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=5000;")
     return conn
 
 
@@ -104,6 +106,8 @@ def init_db():
         creator TEXT NOT NULL,
         channel TEXT NOT NULL
     );
+
+    CREATE INDEX IF NOT EXISTS idx_messages_channel_time ON messages(channel, timestamp);
     """
     with get_connection() as conn:
         conn.executescript(schema)

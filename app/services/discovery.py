@@ -17,6 +17,7 @@ web_port = 5000
 is_running = False
 
 _device_id = str(uuid.uuid4())
+_peers_lock = threading.Lock()
 discovered_peers: Dict[str, Dict[str, Any]] = {}
 
 def get_device_id() -> str:
@@ -86,32 +87,34 @@ def parse_discovery_packet(raw_bytes: bytes, sender_ip: str) -> Optional[Dict[st
 def process_peer_announcement(peer_info: Dict[str, Any], current_time: float) -> None:
     """Update active peer lifecycle state, handling IP changes and deduplication."""
     device_id = peer_info["device_id"]
-    if device_id in discovered_peers:
-        existing = discovered_peers[device_id]
-        existing["ip"] = peer_info["ip"]
-        existing["port"] = peer_info["port"]
-        existing["name"] = peer_info["name"]
-        existing["capabilities"] = peer_info["capabilities"]
-        existing["last_seen"] = current_time
-    else:
-        discovered_peers[device_id] = {
-            "device_id": device_id,
-            "name": peer_info["name"],
-            "ip": peer_info["ip"],
-            "port": peer_info["port"],
-            "capabilities": peer_info["capabilities"],
-            "first_seen": current_time,
-            "last_seen": current_time,
-        }
+    with _peers_lock:
+        if device_id in discovered_peers:
+            existing = discovered_peers[device_id]
+            existing["ip"] = peer_info["ip"]
+            existing["port"] = peer_info["port"]
+            existing["name"] = peer_info["name"]
+            existing["capabilities"] = peer_info["capabilities"]
+            existing["last_seen"] = current_time
+        else:
+            discovered_peers[device_id] = {
+                "device_id": device_id,
+                "name": peer_info["name"],
+                "ip": peer_info["ip"],
+                "port": peer_info["port"],
+                "capabilities": peer_info["capabilities"],
+                "first_seen": current_time,
+                "last_seen": current_time,
+            }
 
 def cleanup_stale_peers(current_time: float) -> None:
     """Purge peers that have not broadcasted within the TTL threshold."""
-    stale_keys = [
-        dev_id for dev_id, peer in discovered_peers.items()
-        if (current_time - peer["last_seen"]) > PEER_TTL_SECONDS
-    ]
-    for key in stale_keys:
-        del discovered_peers[key]
+    with _peers_lock:
+        stale_keys = [
+            dev_id for dev_id, peer in list(discovered_peers.items())
+            if (current_time - peer["last_seen"]) > PEER_TTL_SECONDS
+        ]
+        for key in stale_keys:
+            discovered_peers.pop(key, None)
 
 def start():
     global is_running
@@ -127,18 +130,19 @@ def stop():
 
 def get_servers() -> List[Dict[str, Any]]:
     cleanup_stale_peers(time.time())
-    return [
-        {
-            "device_id": peer["device_id"],
-            "name": peer["name"],
-            "ip": peer["ip"],
-            "port": peer["port"],
-            "capabilities": peer.get("capabilities", ["chat", "file-transfer"]),
-            "first_seen": peer.get("first_seen", peer["last_seen"]),
-            "last_seen": peer["last_seen"],
-        }
-        for peer in discovered_peers.values()
-    ]
+    with _peers_lock:
+        return [
+            {
+                "device_id": peer["device_id"],
+                "name": peer["name"],
+                "ip": peer["ip"],
+                "port": peer["port"],
+                "capabilities": peer.get("capabilities", ["chat", "file-transfer"]),
+                "first_seen": peer.get("first_seen", peer["last_seen"]),
+                "last_seen": peer["last_seen"],
+            }
+            for peer in list(discovered_peers.values())
+        ]
 
 def _get_local_ip() -> str:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

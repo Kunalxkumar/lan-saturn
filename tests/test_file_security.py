@@ -47,3 +47,36 @@ def test_zip_preview_limit(tmp_path, monkeypatch):
 
     with pytest.raises(ValueError, match="exceeds maximum entry limit"):
         get_zip_contents("large.zip")
+
+
+def test_append_chunk_offset_validation(tmp_path, monkeypatch):
+    from app.services.file_service import append_chunk_offset
+    monkeypatch.setattr(Config, "UPLOAD_FOLDER", str(tmp_path))
+
+    # Reject non-zero offset on new file
+    with pytest.raises(ValueError, match="First chunk must start at offset 0"):
+        append_chunk_offset("test.bin", b"chunk", 100, 1000)
+
+    # Reject negative offset
+    with pytest.raises(ValueError, match="Offset cannot be negative"):
+        append_chunk_offset("test.bin", b"chunk", -1, 1000)
+
+    # Reject empty chunk
+    with pytest.raises(ValueError, match="Empty chunk data"):
+        append_chunk_offset("test.bin", b"", 0, 1000)
+
+    # Valid first chunk
+    res = append_chunk_offset("test.bin", b"hello", 0, 10)
+    assert res["currentSize"] == 5
+    assert res["isComplete"] is False
+
+    # Reject offset exceeding written size (gap / sparse file attempt)
+    with pytest.raises(ValueError, match="exceeds current written file size"):
+        append_chunk_offset("test.bin", b"world", 8, 20)
+
+    # Valid contiguous second chunk
+    res2 = append_chunk_offset("test.bin", b"world", 5, 10)
+    assert res2["currentSize"] == 10
+    assert res2["isComplete"] is True
+    assert res2["hash"] is not None
+

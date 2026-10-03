@@ -17,10 +17,15 @@ def _is_loopback(remote_addr: Optional[str]) -> bool:
 
 
 def _get_remote_addr(req: Request):
-    override = req.headers.get("X-Lan-Saturn-Remote-Addr")
-    if override:
-        return override
-    if current_app.config.get("TESTING"):
+    try:
+        is_testing = bool(current_app and current_app.config.get("TESTING"))
+    except RuntimeError:
+        is_testing = False
+
+    if is_testing:
+        override = req.headers.get("X-Lan-Saturn-Remote-Addr")
+        if override:
+            return override
         return None
     return req.remote_addr
 
@@ -158,7 +163,10 @@ def get_session_username(session, fallback: str):
 
 
 def set_session_cookie(response, session):
-    secure_cookie = not current_app.config.get("TESTING", False)
+    try:
+        secure_cookie = bool(request.is_secure) if request else False
+    except RuntimeError:
+        secure_cookie = False
     response.set_cookie(
         SESSION_COOKIE_NAME,
         session["id"],
@@ -167,3 +175,4 @@ def set_session_cookie(response, session):
         secure=secure_cookie,
     )
     return response
+
