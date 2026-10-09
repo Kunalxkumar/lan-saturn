@@ -21,8 +21,10 @@ import useSocket from './hooks/useSocket';
 import useChatMessages from './hooks/chat/useChatMessages';
 import useSocketEvents from './hooks/socket/useSocketEvents';
 import useEncryption from './hooks/encryption/useEncryption';
-import { useAppStore, useUIStore, useChatStore, useSecurityStore } from './store/appStore';
+import { useAppStore, useUIStore, useChatStore, useSecurityStore, useTransferStore, ActiveTransfer } from './store/appStore';
 import { uploadFileInChunks, cancelChunkedUpload } from './lib/chunkedUpload';
+import { downloadFileStreaming } from './lib/chunkedDownload';
+import ActiveTransferDock from './components/Transfers/ActiveTransferDock';
 import { decryptStreamFile, STREAM_CRYPTO_VERSION } from './lib/crypto';
 
 function App() {
@@ -189,6 +191,34 @@ function App() {
         const abortController = new AbortController();
         uploadAbortControllerRef.current = abortController;
 
+        const uploadTransferId = `up_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        let isPaused = false;
+
+        useTransferStore.getState().addTransfer({
+            id: uploadTransferId,
+            filename: file.name,
+            totalSize: file.size,
+            transferredBytes: 0,
+            percent: 0,
+            speedMBs: 0,
+            etaSeconds: 0,
+            state: 'starting',
+            direction: 'upload',
+            isEncrypted: shouldEncrypt,
+            pause: () => {
+                isPaused = true;
+                useTransferStore.getState().updateTransfer(uploadTransferId, { state: 'paused' });
+            },
+            resume: () => {
+                isPaused = false;
+                useTransferStore.getState().updateTransfer(uploadTransferId, { state: 'uploading' });
+            },
+            cancel: () => {
+                abortController.abort();
+                useTransferStore.getState().updateTransfer(uploadTransferId, { state: 'cancelled' });
+            }
+        });
+
         setIsUploading(true);
         setUploadStatus(shouldEncrypt ? `Encrypting & uploading ${file.name}...` : `Uploading ${file.name}...`);
 
@@ -196,7 +226,17 @@ function App() {
             const result = await uploadFileInChunks(file, {
                 passphrase: shouldEncrypt ? encryptionPassphrase.trim() : undefined,
                 signal: abortController.signal,
+                isPaused: () => isPaused,
                 onProgress: (prog) => {
+                    useTransferStore.getState().updateTransfer(uploadTransferId, {
+                        percent: prog.percent,
+                        transferredBytes: prog.uploadedBytes,
+                        totalSize: prog.totalBytes,
+                        speedMBs: prog.speedMBs,
+                        etaSeconds: prog.etaSeconds,
+                        state: prog.state as any,
+                    });
+
                     const speedText = prog.speedMBs > 0 ? ` • ${prog.speedMBs} MB/s` : '';
                     const etaText = prog.etaSeconds > 0 ? ` • ETA: ${prog.etaSeconds}s` : '';
                     const stateLabel = prog.state === 'verifying' 
@@ -207,6 +247,13 @@ function App() {
             });
 
             if (result && result.success) {
+                useTransferStore.getState().updateTransfer(uploadTransferId, {
+                    percent: 100,
+                    transferredBytes: file.size,
+                    state: 'completed',
+                    hash: result.hash,
+                });
+
                 const timestamp = new Date().toISOString();
 
                 socketRef.current?.emit('file_share', {
@@ -249,11 +296,20 @@ function App() {
                 setUploadStatus(`Uploaded ${file.name}`);
                 setTimeout(() => setUploadStatus(''), 3000);
             } else {
+                useTransferStore.getState().updateTransfer(uploadTransferId, {
+                    state: 'failed',
+                    error: 'Upload failed'
+                });
                 setUploadStatus('Upload failed');
             }
         } catch (error: any) {
             console.error('Error uploading file:', error);
-            if (error?.message === 'Upload cancelled') {
+            const isCancelled = error?.message === 'Upload cancelled';
+            useTransferStore.getState().updateTransfer(uploadTransferId, {
+                state: isCancelled ? 'cancelled' : 'failed',
+                error: isCancelled ? undefined : (error?.message || 'Upload failed')
+            });
+            if (isCancelled) {
                 setUploadStatus('Upload cancelled');
             } else {
                 setUploadStatus(error?.message || 'Upload failed. Try again.');
@@ -264,7 +320,7 @@ function App() {
         }
     };
 
-    const decryptFileMessage = async (message) => {
+    const decryptFileMessage = async (message: any) => {
         if (!message.encryptedFile) return;
 
         if (!encryptionPassphrase) {
@@ -277,34 +333,62 @@ function App() {
             return;
         }
 
+        const downloadId = `dec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const abortController = new AbortController();
+
+        useTransferStore.getState().addTransfer({
+            id: downloadId,
+            filename: (message.decryptedFilename || message.filename).replace(/\.lsenc$/i, ''),
+            totalSize: message.originalSize || 0,
+            transferredBytes: 0,
+            percent: 0,
+            speedMBs: 0,
+            etaSeconds: 0,
+            state: 'starting',
+            direction: 'download',
+            isEncrypted: true,
+            cancel: () => {
+                abortController.abort();
+                useTransferStore.getState().updateTransfer(downloadId, { state: 'cancelled' });
+            }
+        });
+
         setUploadStatus(`Decrypting ${message.filename}...`);
 
         try {
-            const response = await fetch(message.fileUrl);
-            const encryptedBytesData = new Uint8Array(await response.arrayBuffer());
-
-            let plainBytes;
-            if (message.encryptionVersion === STREAM_CRYPTO_VERSION) {
-                plainBytes = decryptStreamFile(
-                    encryptedBytesData,
-                    encryptionPassphrase.trim(),
-                    message.salt,
-                    message.chunkSize || (2 * 1024 * 1024)
-                );
-            } else {
-                plainBytes = decryptBytes(
-                    encryptedBytesData,
-                    encryptionPassphrase.trim(),
-                    message.salt,
-                    message.nonce
-                );
-            }
-
-            const blob = new Blob([plainBytes as unknown as BlobPart], {
-                type: message.originalType || 'application/octet-stream'
+            const result = await downloadFileStreaming(message.fileUrl, message.filename, {
+                expectedHash: message.hash,
+                passphrase: encryptionPassphrase.trim(),
+                isEncrypted: true,
+                signal: abortController.signal,
+                encryptionMetadata: {
+                    salt: message.salt,
+                    nonce: message.nonce,
+                    header: message.header,
+                    chunkSize: message.chunkSize,
+                    originalSize: message.originalSize,
+                    originalType: message.originalType,
+                },
+                onProgress: (prog) => {
+                    useTransferStore.getState().updateTransfer(downloadId, {
+                        percent: prog.percent,
+                        transferredBytes: prog.uploadedBytes,
+                        totalSize: prog.totalBytes || message.originalSize || 0,
+                        speedMBs: prog.speedMBs,
+                        etaSeconds: prog.etaSeconds,
+                        state: prog.state as any,
+                    });
+                }
             });
-            const decryptedUrl = URL.createObjectURL(blob);
-            const decryptedFilename = (message.decryptedFilename || message.filename).replace(/\.lsenc$/i, '');
+
+            useTransferStore.getState().updateTransfer(downloadId, {
+                percent: 100,
+                state: 'completed',
+                hash: result.hash,
+            });
+
+            const decryptedUrl = result.blobUrl;
+            const decryptedFilename = result.filename;
 
             setMessages(prev => prev.map(item => (
                 item.id === message.id
@@ -313,9 +397,103 @@ function App() {
             )));
             setUploadStatus(`Decrypted ${decryptedFilename}`);
             setTimeout(() => setUploadStatus(''), 3000);
-        } catch (error) {
+        } catch (error: any) {
             console.error('File decryption failed:', error);
-            setUploadStatus('File decryption failed. Wrong passphrase or damaged file.');
+            const isCancelled = error?.message === 'Download cancelled by user';
+            useTransferStore.getState().updateTransfer(downloadId, {
+                state: isCancelled ? 'cancelled' : 'failed',
+                error: isCancelled ? undefined : (error?.message || 'File decryption failed')
+            });
+            setUploadStatus(isCancelled ? 'Decryption cancelled' : 'File decryption failed. Wrong passphrase or damaged file.');
+        }
+    };
+
+    const handleDownloadFile = async (message: any) => {
+        if (!message) return;
+        const targetUrl = message.decryptedUrl || message.fileUrl;
+        const targetFilename = message.decryptedFilename || (message.filename || 'download').replace(/\.lsenc$/i, '');
+
+        if (!targetUrl) return;
+
+        // If it's already an in-memory blob URL, trigger instant browser save
+        if (targetUrl.startsWith('blob:')) {
+            const a = document.createElement('a');
+            a.href = targetUrl;
+            a.download = targetFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            return;
+        }
+
+        // Stream progressively with live speed, ETA, and SHA-256 verification
+        const downloadId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const abortController = new AbortController();
+
+        useTransferStore.getState().addTransfer({
+            id: downloadId,
+            filename: targetFilename,
+            totalSize: message.originalSize || 0,
+            transferredBytes: 0,
+            percent: 0,
+            speedMBs: 0,
+            etaSeconds: 0,
+            state: 'starting',
+            direction: 'download',
+            hash: message.hash,
+            isEncrypted: Boolean(message.encryptedFile),
+            cancel: () => {
+                abortController.abort();
+                useTransferStore.getState().updateTransfer(downloadId, { state: 'cancelled' });
+            }
+        });
+
+        try {
+            const result = await downloadFileStreaming(targetUrl, message.filename || targetFilename, {
+                expectedHash: message.hash,
+                passphrase: encryptionPassphrase ? encryptionPassphrase.trim() : undefined,
+                isEncrypted: Boolean(message.encryptedFile),
+                signal: abortController.signal,
+                encryptionMetadata: {
+                    salt: message.salt,
+                    nonce: message.nonce,
+                    header: message.header,
+                    chunkSize: message.chunkSize,
+                    originalSize: message.originalSize,
+                    originalType: message.originalType,
+                },
+                onProgress: (prog) => {
+                    useTransferStore.getState().updateTransfer(downloadId, {
+                        percent: prog.percent,
+                        transferredBytes: prog.uploadedBytes,
+                        totalSize: prog.totalBytes || message.originalSize || 0,
+                        speedMBs: prog.speedMBs,
+                        etaSeconds: prog.etaSeconds,
+                        state: prog.state as any,
+                    });
+                }
+            });
+
+            useTransferStore.getState().updateTransfer(downloadId, {
+                percent: 100,
+                state: 'completed',
+                hash: result.hash,
+            });
+
+            const a = document.createElement('a');
+            a.href = result.blobUrl;
+            a.download = result.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } catch (error: any) {
+            if (error?.message !== 'Download cancelled by user') {
+                console.error('Download streaming failed:', error);
+                useTransferStore.getState().updateTransfer(downloadId, {
+                    state: 'failed',
+                    error: error?.message || 'Download failed'
+                });
+            }
         }
     };
 
@@ -480,7 +658,15 @@ function App() {
                     ) : (
                         <>
                             <AnnouncementBanner announcements={announcements} onDismiss={dismissAnnouncement} />
-                            <MessageList messages={visibleMessages} searchQuery={searchQuery} messagesEndRef={messagesEndRef} onDecryptFile={decryptFileMessage} onReact={sendReaction} currentUsername={currentUsername} />
+                            <MessageList 
+                                messages={visibleMessages} 
+                                searchQuery={searchQuery} 
+                                messagesEndRef={messagesEndRef} 
+                                onDecryptFile={decryptFileMessage} 
+                                onDownloadFile={handleDownloadFile}
+                                onReact={sendReaction} 
+                                currentUsername={currentUsername} 
+                            />
 
                             {activeView === 'server' && polls.length > 0 && (
                                 <div className="absolute right-4 top-16 w-80 space-y-4 max-h-[50vh] overflow-y-auto z-10 custom-scrollbar">
@@ -585,6 +771,9 @@ function App() {
                 setActiveChannel={setActiveChannel}
                 handleJoinConfirm={handleJoinConfirm}
             />
+
+            {/* Active Transfers Floating Progress Dock */}
+            <ActiveTransferDock />
         </div>
     );
 }

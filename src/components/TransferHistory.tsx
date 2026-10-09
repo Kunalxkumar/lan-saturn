@@ -10,14 +10,20 @@ import {
     Copy, 
     Check, 
     ShieldCheck,
-    Loader2 
+    Loader2,
+    Pause,
+    Play,
+    AlertTriangle
 } from 'lucide-react';
+import { useTransferStore } from '../store/appStore';
 
 interface TransferHistoryProps {
     onClose: () => void;
 }
 
 export default function TransferHistory({ onClose }: TransferHistoryProps) {
+    const { transfers, removeTransfer } = useTransferStore();
+    const activeTransferList = Object.values(transfers);
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -157,7 +163,84 @@ export default function TransferHistory({ onClose }: TransferHistoryProps) {
                 </div>
 
                 {/* Table Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
+                    {/* Active In-Flight Transfers Section */}
+                    {activeTransferList.length > 0 && (
+                        <div className="p-3 rounded-xl bg-white/[0.02] border border-sky-500/20 space-y-2">
+                            <div className="flex items-center justify-between pb-1 border-b border-white/5">
+                                <span className="text-xs font-bold text-sky-300 flex items-center gap-1.5 font-mono">
+                                    <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                                    Active LAN Transfers ({activeTransferList.length})
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {activeTransferList.map(t => {
+                                    const isUpload = t.direction === 'upload';
+                                    const isPaused = t.state === 'paused';
+                                    const isCompleted = t.state === 'completed';
+                                    const isFailed = t.state === 'failed';
+                                    return (
+                                        <div key={t.id} className="p-2.5 rounded-lg bg-[#0e1422] border border-white/5 flex flex-col gap-1.5">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <div className={`p-1.5 rounded-md ${
+                                                        isUpload ? 'bg-sky-500/15 text-sky-400' : 'bg-emerald-500/15 text-emerald-400'
+                                                    }`}>
+                                                        {isUpload ? <ArrowUpRight size={13} /> : <ArrowDownLeft size={13} />}
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-slate-200 truncate" title={t.filename}>
+                                                        {t.filename}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    {t.pause && t.state === 'uploading' && (
+                                                        <button 
+                                                            onClick={t.pause}
+                                                            className="p-1 rounded text-slate-400 hover:text-amber-300 hover:bg-white/5 cursor-pointer"
+                                                            title="Pause"
+                                                        >
+                                                            <Pause size={12} />
+                                                        </button>
+                                                    )}
+                                                    {t.resume && isPaused && (
+                                                        <button 
+                                                            onClick={t.resume}
+                                                            className="p-1 rounded text-slate-400 hover:text-sky-300 hover:bg-white/5 cursor-pointer"
+                                                            title="Resume"
+                                                        >
+                                                            <Play size={12} />
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => {
+                                                            t.cancel?.();
+                                                            removeTransfer(t.id);
+                                                        }}
+                                                        className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-white/5 cursor-pointer"
+                                                        title="Dismiss / Cancel"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="w-full bg-white/[0.06] rounded-full h-1.5 overflow-hidden">
+                                                <div 
+                                                    className={`h-full transition-all duration-200 ${
+                                                        isCompleted ? 'bg-emerald-400' : isFailed ? 'bg-rose-500' : isPaused ? 'bg-amber-400' : 'bg-sky-500'
+                                                    }`}
+                                                    style={{ width: `${Math.max(2, Math.min(100, t.percent))}%` }}
+                                                />
+                                            </div>
+                                            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                                                <span>{formatSize(t.transferredBytes)} / {formatSize(t.totalSize)}</span>
+                                                <span>{t.speedMBs > 0 ? `${t.speedMBs} MB/s` : t.state} • {t.percent}%</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                     {loading && history.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 gap-2 text-slate-400">
                             <Loader2 size={24} className="animate-spin text-sky-400" />

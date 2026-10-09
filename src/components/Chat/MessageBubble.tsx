@@ -91,10 +91,11 @@ interface MessageBubbleProps {
     message: any;
     onReact?: (id: any, emoji: string) => void;
     onDecryptFile?: (msg: any) => void;
+    onDownloadFile?: (msg: any) => void;
     currentUsername: string;
 }
 
-export default function MessageBubble({ message, onReact, onDecryptFile, currentUsername }: MessageBubbleProps) {
+export default function MessageBubble({ message, onReact, onDecryptFile, onDownloadFile, currentUsername }: MessageBubbleProps) {
     const formatTime = (dateString: string) => {
         try {
             const date = new Date(dateString);
@@ -225,15 +226,25 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
                                         {isImage ? <ImageIcon size={16} /> : isVideo ? <Film size={16} /> : isAudio ? <Music size={16} /> : isZip ? <FileArchive size={16} /> : <FileText size={16} />}
                                     </div>
                                     <div className="flex flex-col min-w-0">
-                                        <a 
-                                            href={displayUrl} 
-                                            download={displayName} 
-                                            className="text-xs font-semibold text-sky-300 hover:text-sky-200 truncate underline-offset-2 hover:underline"
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                        >
-                                            {displayName}
-                                        </a>
+                                        {onDownloadFile ? (
+                                            <button 
+                                                type="button"
+                                                onClick={() => onDownloadFile(message)}
+                                                className="text-xs font-semibold text-sky-300 hover:text-sky-200 truncate underline-offset-2 hover:underline text-left cursor-pointer"
+                                            >
+                                                {displayName}
+                                            </button>
+                                        ) : (
+                                            <a 
+                                                href={displayUrl} 
+                                                download={displayName} 
+                                                className="text-xs font-semibold text-sky-300 hover:text-sky-200 truncate underline-offset-2 hover:underline"
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                            >
+                                                {displayName}
+                                            </a>
+                                        )}
                                         {sizeMB && (
                                             <span className="text-[10px] text-slate-400 font-mono">
                                                 {sizeMB} MB
@@ -242,14 +253,25 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
                                     </div>
                                 </div>
 
-                                <a
-                                    href={displayUrl}
-                                    download={displayName}
-                                    className="btn-shimmer p-1.5 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
-                                    title="Download File"
-                                >
-                                    <Download size={14} />
-                                </a>
+                                {onDownloadFile ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => onDownloadFile(message)}
+                                        className="btn-shimmer p-1.5 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
+                                        title="Download File with Integrity Verification"
+                                    >
+                                        <Download size={14} />
+                                    </button>
+                                ) : (
+                                    <a
+                                        href={displayUrl}
+                                        download={displayName}
+                                        className="btn-shimmer p-1.5 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
+                                        title="Download File"
+                                    >
+                                        <Download size={14} />
+                                    </a>
+                                )}
                             </div>
                         ) : (
                             <button 

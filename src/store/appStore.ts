@@ -113,3 +113,78 @@ export const useSecurityStore = create<SecurityState>((set) => ({
     joinInvite: '',
     setJoinInvite: (invite) => set({ joinInvite: invite }),
 }));
+
+export type TransferState =
+    | 'idle'
+    | 'starting'
+    | 'uploading'
+    | 'downloading'
+    | 'paused'
+    | 'resuming'
+    | 'verifying'
+    | 'completed'
+    | 'failed'
+    | 'cancelled';
+
+export interface ActiveTransfer {
+    id: string;
+    filename: string;
+    totalSize: number;
+    transferredBytes: number;
+    percent: number;
+    speedMBs: number;
+    etaSeconds: number;
+    state: TransferState;
+    direction: 'upload' | 'download';
+    hash?: string;
+    expectedHash?: string;
+    error?: string;
+    isEncrypted?: boolean;
+    fileUrl?: string;
+    file?: File;
+    pause?: () => void;
+    resume?: () => void;
+    cancel?: () => void;
+}
+
+interface TransferStoreState {
+    transfers: Record<string, ActiveTransfer>;
+    addTransfer: (transfer: ActiveTransfer) => void;
+    updateTransfer: (id: string, patch: Partial<ActiveTransfer>) => void;
+    removeTransfer: (id: string) => void;
+    clearFinishedTransfers: () => void;
+}
+
+export const useTransferStore = create<TransferStoreState>((set) => ({
+    transfers: {},
+    addTransfer: (transfer) => set((state) => ({
+        transfers: {
+            ...state.transfers,
+            [transfer.id]: transfer,
+        },
+    })),
+    updateTransfer: (id, patch) => set((state) => {
+        const existing = state.transfers[id];
+        if (!existing) return state;
+        return {
+            transfers: {
+                ...state.transfers,
+                [id]: { ...existing, ...patch },
+            },
+        };
+    }),
+    removeTransfer: (id) => set((state) => {
+        const next = { ...state.transfers };
+        delete next[id];
+        return { transfers: next };
+    }),
+    clearFinishedTransfers: () => set((state) => {
+        const next: Record<string, ActiveTransfer> = {};
+        for (const [id, t] of Object.entries(state.transfers)) {
+            if (t.state !== 'completed' && t.state !== 'cancelled' && t.state !== 'failed') {
+                next[id] = t;
+            }
+        }
+        return { transfers: next };
+    }),
+}));

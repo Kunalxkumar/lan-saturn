@@ -8,6 +8,7 @@ interface MessageListProps {
     searchQuery: string;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     onDecryptFile?: (msg: any) => void;
+    onDownloadFile?: (msg: any) => void;
     onReact?: (id: any, emoji: string) => void;
     currentUsername: string;
 }
@@ -17,6 +18,7 @@ export default function MessageList({
     searchQuery, 
     messagesEndRef, 
     onDecryptFile, 
+    onDownloadFile,
     onReact, 
     currentUsername 
 }: MessageListProps) {
@@ -54,6 +56,7 @@ export default function MessageList({
                             message={message}
                             onReact={onReact}
                             onDecryptFile={onDecryptFile}
+                            onDownloadFile={onDownloadFile}
                             currentUsername={currentUsername}
                         />
                     );

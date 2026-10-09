@@ -33,6 +33,7 @@ export interface ChunkedUploadOptions {
     uploadId?: string;
     onProgress?: (progress: ChunkProgress) => void;
     signal?: AbortSignal;
+    isPaused?: () => boolean;
 }
 
 export interface ChunkedUploadResult {
@@ -212,15 +213,24 @@ export async function uploadFileInChunks(
 
     let uploadedBytes = 0;
     let fileOffset = 0;
+    let isFirstChunk = true;
     const startTime = performance.now();
     let lastSampleTime = startTime;
     let lastSampleBytes = 0;
     let currentSpeedMBs = 0;
     let lastServerResponse: any = null;
 
-    // Helper to check abort
+    // Helper to check abort or pause
     const checkAbort = () => {
+        if (options?.isPaused?.()) {
+            reportProgress('paused', uploadedBytes, totalUploadSize, 0, 0);
+            throw new Error('Upload paused');
+        }
         if (options?.signal?.aborted) {
+            if (options?.isPaused?.()) {
+                reportProgress('paused', uploadedBytes, totalUploadSize, 0, 0);
+                throw new Error('Upload paused');
+            }
             if (uploadId) {
                 cancelChunkedUpload(uploadId).catch(() => {});
             }
@@ -282,8 +292,45 @@ export async function uploadFileInChunks(
         };
     }
 
-    // Normal chunk loop
-    let isFirstChunk = true;
+    // Fast-forward local state if resuming from serverOffset > 0
+    if (serverOffset > 0) {
+        if (!isEncrypted) {
+            const alreadyUploadedBlob = file.slice(0, serverOffset);
+            const alreadyUploadedBuffer = await alreadyUploadedBlob.arrayBuffer();
+            sodium.crypto_hash_sha256_update(wireHasher, new Uint8Array(alreadyUploadedBuffer));
+            uploadedBytes = serverOffset;
+            fileOffset = serverOffset;
+            lastSampleBytes = serverOffset;
+        } else {
+            let replayOffset = 0;
+            while (replayOffset < originalSize && uploadedBytes < serverOffset) {
+                const plainEnd = Math.min(replayOffset + plainChunkSize, originalSize);
+                const isFinal = plainEnd === originalSize;
+                const plainSlice = await file.slice(replayOffset, plainEnd).arrayBuffer();
+                const cipherChunk = encryptStreamChunk(streamCipherState, new Uint8Array(plainSlice), isFinal);
+
+                let chunkPayload: Uint8Array;
+                if (isFirstChunk) {
+                    const rawHeader = sodium.from_base64(streamHeader, sodium.base64_variants.ORIGINAL);
+                    chunkPayload = new Uint8Array(STREAM_HEADER_SIZE + cipherChunk.length);
+                    chunkPayload.set(rawHeader, 0);
+                    chunkPayload.set(cipherChunk, STREAM_HEADER_SIZE);
+                    isFirstChunk = false;
+                } else {
+                    chunkPayload = cipherChunk;
+                }
+
+                sodium.crypto_hash_sha256_update(wireHasher, chunkPayload);
+                uploadedBytes += chunkPayload.length;
+                replayOffset = plainEnd;
+                fileOffset = plainEnd;
+            }
+            lastSampleBytes = uploadedBytes;
+        }
+        reportProgress('uploading', uploadedBytes, totalUploadSize, 0, 0);
+    }
+
+    // Main chunk upload loop
     while (fileOffset < originalSize) {
         checkAbort();
 
@@ -359,12 +406,13 @@ export async function uploadFileInChunks(
         uploadedBytes += chunkPayload.length;
         fileOffset = plainEnd;
 
-        // Calculate transfer speed and ETA based on elapsed time
+        // Calculate smooth transfer speed using Exponential Moving Average (EMA)
         const now = performance.now();
         const timeDelta = (now - lastSampleTime) / 1000;
-        if (timeDelta >= 0.5 || isFinal) {
+        if (timeDelta >= 0.25 || isFinal) {
             const bytesDelta = uploadedBytes - lastSampleBytes;
-            currentSpeedMBs = (bytesDelta / (1024 * 1024)) / timeDelta;
+            const instantSpeed = (bytesDelta / (1024 * 1024)) / timeDelta;
+            currentSpeedMBs = currentSpeedMBs === 0 ? instantSpeed : (0.35 * instantSpeed + 0.65 * currentSpeedMBs);
             lastSampleTime = now;
             lastSampleBytes = uploadedBytes;
         }
