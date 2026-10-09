@@ -1,37 +1,64 @@
 import React from 'react';
-import { Hash, GraduationCap, Folder, MessageSquare } from 'lucide-react';
+import { Hash, GraduationCap, FolderArchive, MessageSquareCode, ShieldCheck } from 'lucide-react';
+
+interface ChannelListProps {
+    activeChannel: string;
+    setActiveChannel: (channel: string) => void;
+    activeView: string;
+    setActiveView: (view: string) => void;
+}
 
 const CHANNELS = [
-    { name: 'general', Icon: Hash },
-    { name: 'random', Icon: MessageSquare },
-    { name: 'study', Icon: GraduationCap },
-    { name: 'files', Icon: Folder }
+    { name: 'general', icon: Hash, desc: 'Public discussions' },
+    { name: 'random', icon: MessageSquareCode, desc: 'Casual chat & links' },
+    { name: 'study', icon: GraduationCap, desc: 'Notes & research' },
+    { name: 'files', icon: FolderArchive, desc: 'Shared payloads' }
 ];
 
-export default function ChannelList({ activeChannel, setActiveChannel, activeView, setActiveView }) {
-    const handleChannelClick = (channel) => {
+export default function ChannelList({ 
+    activeChannel, 
+    setActiveChannel, 
+    activeView, 
+    setActiveView 
+}: ChannelListProps) {
+    const handleChannelClick = (channel: string) => {
         setActiveChannel(channel);
         setActiveView('server');
     };
 
     return (
-        <div className="mb-3">
-            <div className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider mb-1.5 px-2">Channels</div>
+        <div>
+            <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-2">
+                <span>Rooms</span>
+                <span className="text-[10px] text-slate-400 font-mono">4</span>
+            </div>
+            
             <div className="space-y-0.5">
-                {CHANNELS.map(({ name, Icon }) => {
+                {CHANNELS.map(({ name, icon: Icon, desc }) => {
                     const isActive = activeChannel === name && activeView === 'server';
                     return (
                         <button
                             key={name}
-                            className={`flex items-center gap-2 w-full rounded-md px-2.5 py-1.5 text-xs transition-all text-left ${
+                            className={`flex items-center gap-2.5 w-full rounded-lg px-2.5 py-1.5 text-xs transition-all text-left group relative cursor-pointer ${
                                 isActive 
-                                    ? 'bg-indigo-600/20 text-indigo-300 font-semibold border-l-2 border-indigo-500' 
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                    ? 'bg-sky-500/15 text-sky-300 font-medium border border-sky-500/25 shadow-sm' 
+                                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent'
                             }`}
                             onClick={() => handleChannelClick(name)}
+                            title={desc}
                         >
-                            <Icon size={15} className={`shrink-0 ${isActive ? 'text-indigo-400' : 'text-gray-400'}`} />
-                            <span className="truncate capitalize">{name}</span>
+                            {isActive && (
+                                <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-3.5 bg-sky-400 rounded-r-full shadow-sm shadow-sky-400/50" />
+                            )}
+                            <Icon 
+                                size={14} 
+                                className={`shrink-0 transition-transform group-hover:scale-110 ${
+                                    isActive ? 'text-sky-400' : 'text-slate-400 group-hover:text-slate-300'
+                                }`} 
+                            />
+                            <span className="truncate capitalize tracking-tight font-medium">
+                                {name}
+                            </span>
                         </button>
                     );
                 })}

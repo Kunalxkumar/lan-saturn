@@ -1,11 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Smile, Paperclip, Mic, Send } from 'lucide-react';
+import { Paperclip, Send, Smile, Sparkles, FileUp, Loader2 } from 'lucide-react';
 
-export default function MessageComposer({ activeChannel, onSendMessage, onTyping, onTypingStop, onFileUpload, isUploading, uploadStatus }) {
+interface MessageComposerProps {
+    activeChannel: string;
+    onSendMessage: (msg: string) => void;
+    onTyping: () => void;
+    onTypingStop?: () => void;
+    onFileUpload?: (file: File) => void;
+    isUploading: boolean;
+    uploadStatus: string;
+}
+
+export default function MessageComposer({ 
+    activeChannel, 
+    onSendMessage, 
+    onTyping, 
+    onTypingStop, 
+    onFileUpload, 
+    isUploading, 
+    uploadStatus 
+}: MessageComposerProps) {
     const [message, setMessage] = useState('');
-    const textareaRef = useRef(null);
-    const fileInputRef = useRef(null);
-    const typingTimeoutRef = useRef(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const typingTimeoutRef = useRef<any>(null);
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -14,27 +32,23 @@ export default function MessageComposer({ activeChannel, onSendMessage, onTyping
         }
     }, [message]);
 
-    const handleMessageChange = (e) => {
+    const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = e.target.value;
         setMessage(value);
 
         if (value.trim()) {
             onTyping();
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             typingTimeoutRef.current = setTimeout(() => {
                 onTypingStop?.();
             }, 1500);
         } else {
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             onTypingStop?.();
         }
     };
 
-    const handleKeyPress = (e) => {
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
@@ -43,9 +57,7 @@ export default function MessageComposer({ activeChannel, onSendMessage, onTyping
 
     const handleSendMessage = () => {
         if (message.trim()) {
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             onTypingStop?.();
             onSendMessage(message);
             setMessage('');
@@ -55,8 +67,8 @@ export default function MessageComposer({ activeChannel, onSendMessage, onTyping
         }
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
         if (file && onFileUpload && !isUploading) {
             onFileUpload(file);
             e.target.value = ''; 
@@ -64,60 +76,70 @@ export default function MessageComposer({ activeChannel, onSendMessage, onTyping
     };
 
     return (
-        <div className="flex flex-col w-full px-4 pb-4">
+        <div className="flex flex-col w-full px-4 pb-3">
+            {/* Upload Status Banner */}
             {uploadStatus && (
-                <div className={`text-xs mb-2 px-2 font-mono ${isUploading ? 'text-indigo-400 animate-pulse' : 'text-gray-400'}`}>
-                    {uploadStatus}
+                <div className={`mb-2 px-3 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-2 ${
+                    isUploading 
+                        ? 'bg-sky-500/10 text-sky-300 border-sky-500/25' 
+                        : 'bg-white/[0.04] text-slate-300 border-white/10'
+                }`}>
+                    {isUploading && <Loader2 size={13} className="animate-spin text-sky-400 shrink-0" />}
+                    <span className="truncate">{uploadStatus}</span>
                 </div>
             )}
-            <div className="bg-surface-container border border-outline-variant rounded-xl flex flex-col input-glow transition-all duration-200">
+
+            {/* Input Container */}
+            <div className="bg-[#101522]/90 backdrop-blur-md border border-white/[0.08] focus-within:border-sky-500/50 rounded-xl p-2 flex flex-col transition-all shadow-xl shadow-black/20">
                 <textarea
                     ref={textareaRef}
-                    placeholder={`Message #${activeChannel}...`}
+                    placeholder={`Message #${activeChannel || 'stream'}... (Markdown supported)`}
                     value={message}
                     onChange={handleMessageChange}
                     onKeyDown={handleKeyPress}
-                    className="w-full bg-transparent text-body-md text-on-surface placeholder:text-on-surface-variant border-none focus:ring-0 resize-none p-3 max-h-[140px] min-h-[44px] outline-none"
                     rows={1}
+                    className="w-full bg-transparent text-xs text-slate-100 placeholder:text-slate-500 border-none resize-none px-2 py-1 max-h-[140px] min-h-[28px] outline-none leading-relaxed font-sans"
                 />
-                <div className="flex items-center justify-between p-2 pt-0">
+
+                <div className="flex items-center justify-between pt-1 border-t border-white/[0.04] mt-1">
+                    {/* Left Attachment Controls */}
                     <div className="flex items-center gap-1">
                         <input
                             type="file"
                             ref={fileInputRef}
-                            style={{ display: 'none' }}
+                            className="hidden"
                             onChange={handleFileChange}
                         />
                         <button
                             type="button"
-                            className="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high p-1.5 rounded-md transition-colors flex items-center justify-center group"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
-                            title="Attach File"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-white/[0.06] transition-all flex items-center gap-1 text-xs cursor-pointer disabled:opacity-40"
+                            title="Attach File (LAN P2P)"
                         >
-                            <div className="w-6 h-6 rounded-full bg-surface-container-highest group-hover:bg-primary-container flex items-center justify-center transition-colors">
-                                <Paperclip size={14} className="group-hover:text-white transition-colors" />
-                            </div>
-                        </button>
-                        <div className="w-px h-4 bg-outline-variant mx-1" />
-                        <button type="button" className="text-on-surface-variant hover:text-primary p-1.5 rounded-md transition-colors" title="Emoji">
-                            <Smile size={18} />
-                        </button>
-                        <button type="button" className="text-on-surface-variant hover:text-primary p-1.5 rounded-md transition-colors" title="Voice Message">
-                            <Mic size={18} />
+                            <Paperclip size={15} />
+                            <span className="text-[11px] font-medium hidden sm:inline">Attach</span>
                         </button>
                     </div>
 
+                    {/* Right Info & Send */}
                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono text-on-surface-variant hidden sm:inline-block">Markdown supported</span>
+                        <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
+                            Enter to send
+                        </span>
+
                         <button
                             type="button"
                             onClick={handleSendMessage}
                             disabled={!message.trim() || isUploading}
-                            className="bg-primary-container hover:bg-[#4752C4] text-white p-2 rounded-lg transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                            className={`p-1.5 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                                message.trim() && !isUploading
+                                    ? 'btn-shimmer text-white'
+                                    : 'bg-white/[0.04] text-slate-600 cursor-not-allowed border border-white/5'
+                            }`}
                             title="Send Message"
                         >
-                            <Send size={16} />
+                            <Send size={14} />
                         </button>
                     </div>
                 </div>

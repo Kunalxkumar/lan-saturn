@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
-import { Shield } from 'lucide-react';
+import { 
+    Shield, 
+    Lock, 
+    Unlock, 
+    Download, 
+    Folder, 
+    FileText, 
+    FileArchive, 
+    Film, 
+    Music, 
+    Image as ImageIcon,
+    ChevronDown, 
+    ChevronRight,
+    Loader2
+} from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
-function ZipPreview({ filename }) {
-    const [files, setFiles] = useState([]);
+function ZipPreview({ filename }: { filename: string }) {
+    const [files, setFiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -24,7 +38,7 @@ function ZipPreview({ filename }) {
             if (res.ok && data.success) {
                 setFiles(data.files || []);
             } else {
-                setError(data.error || 'Failed to read zip contents');
+                setError(data.error || 'Failed to read archive contents');
             }
         } catch (err) {
             setError('Error loading zip preview');
@@ -34,18 +48,37 @@ function ZipPreview({ filename }) {
     };
 
     return (
-        <div className="zip-preview-container">
-            <button className="zip-preview-toggle-btn" onClick={loadZipContents}>
-                {isOpen ? '▼ Hide zip contents' : '► Preview zip contents'}
+        <div className="mt-2 text-xs">
+            <button 
+                className="flex items-center gap-1.5 text-sky-400 hover:text-sky-300 font-medium py-1 px-2 rounded bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 transition-colors cursor-pointer"
+                onClick={loadZipContents}
+            >
+                {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span>{isOpen ? 'Collapse archive' : 'Explore ZIP contents'}</span>
             </button>
+
             {isOpen && (
-                <div className="zip-contents-list">
-                    {loading && <div className="zip-loading">Loading contents...</div>}
-                    {error && <div className="zip-error">{error}</div>}
+                <div className="mt-2 p-2.5 rounded-lg bg-[#0e131d] border border-white/10 max-h-48 overflow-y-auto custom-scrollbar">
+                    {loading && (
+                        <div className="flex items-center gap-2 text-slate-400 py-1">
+                            <Loader2 size={13} className="animate-spin text-sky-400" />
+                            <span>Inspecting archive...</span>
+                        </div>
+                    )}
+                    {error && <div className="text-rose-400 py-1">{error}</div>}
                     {!loading && !error && files.map((f, i) => (
-                        <div key={i} className={`zip-file-item ${f.is_dir ? 'is-dir' : ''}`}>
-                            <span className="zip-file-name">{f.is_dir ? '📁' : '📄'} {f.name}</span>
-                            {!f.is_dir && <span className="zip-file-size">({(f.size / 1024).toFixed(1)} KB)</span>}
+                        <div key={i} className="flex items-center justify-between py-1 px-1.5 hover:bg-white/[0.04] rounded transition-colors text-[11px] font-mono">
+                            <div className="flex items-center gap-2 truncate">
+                                {f.is_dir ? <Folder size={12} className="text-amber-400" /> : <FileText size={12} className="text-slate-400" />}
+                                <span className={f.is_dir ? 'text-amber-300 font-semibold truncate' : 'text-slate-300 truncate'}>
+                                    {f.name}
+                                </span>
+                            </div>
+                            {!f.is_dir && (
+                                <span className="text-slate-400 shrink-0 ml-2">
+                                    {(f.size / 1024).toFixed(1)} KB
+                                </span>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -54,16 +87,27 @@ function ZipPreview({ filename }) {
     );
 }
 
-export default function MessageBubble({ message, onReact, onDecryptFile, currentUsername }) {
-    const formatTime = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+interface MessageBubbleProps {
+    message: any;
+    onReact?: (id: any, emoji: string) => void;
+    onDecryptFile?: (msg: any) => void;
+    currentUsername: string;
+}
+
+export default function MessageBubble({ message, onReact, onDecryptFile, currentUsername }: MessageBubbleProps) {
+    const formatTime = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return '';
+        }
     };
 
-    const formatMessage = (text) => {
+    const formatMessage = (text: string) => {
         if (!text) return '';
         try {
-            const parsed = marked.parse(text, { async: false, breaks: true, gfm: true });
+            const parsed = marked.parse(text, { async: false, breaks: true, gfm: true }) as string;
             return DOMPurify.sanitize(parsed);
         } catch (e) {
             return text;
@@ -71,9 +115,10 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
     };
 
     const isFile = message.type === 'file';
+    const isOwn = message.isOwn || message.username === currentUsername;
     
     // File specifics
-    const displayName = isFile ? (message.decryptedFilename || message.filename.replace(/\.lsenc$/i, '')) : '';
+    const displayName = isFile ? (message.decryptedFilename || message.filename?.replace(/\.lsenc$/i, '')) : '';
     const displayUrl = isFile ? (message.decryptedUrl || (!message.encryptedFile ? message.fileUrl : '')) : '';
     const isImage = isFile && displayName.match(/\.(jpeg|jpg|gif|png|webp)$/i);
     const isVideo = isFile && displayName.match(/\.(mp4|webm|ogg)$/i);
@@ -81,80 +126,161 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
     const isZip = isFile && displayName.match(/\.zip$/i);
     const sizeMB = isFile && message.originalSize ? (message.originalSize / (1024 * 1024)).toFixed(2) : null;
 
+    const quickEmojis = ['👍', '❤️', '🔥', '🚀', '👀'];
+
     return (
-        <div className={`message-bubble group relative flex gap-3 p-2.5 rounded-lg hover:bg-surface-container-low transition-colors ${message.isOwn ? 'bg-primary-container/10' : ''} ${message.isPrivate ? 'bg-tertiary-container/15' : ''}`}>
-            <div className="message-hover-actions absolute -top-3 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container border border-outline-variant rounded-md shadow-lg flex items-center p-1 gap-1 z-10">
-                {['👍', '❤️', '🔥', '😂'].map(emoji => (
-                    <button key={emoji} className="hover-action-btn hover:bg-surface-container-high p-1 rounded transition-colors text-xs" onClick={() => onReact?.(message.id, emoji)}>
+        <div className={`group relative flex gap-3 p-2.5 rounded-xl transition-all ${
+            isOwn 
+                ? 'bg-[#121927]/60 hover:bg-[#151e30] border border-white/[0.05]' 
+                : 'hover:bg-white/[0.03] border border-transparent hover:border-white/5'
+        }`}>
+            {/* React Bits Floating Hover Reaction Dock */}
+            <div className="absolute -top-3.5 right-4 opacity-0 group-hover:opacity-100 transition-all duration-150 bg-[#121824] border border-white/[0.12] rounded-lg shadow-xl shadow-black/50 flex items-center p-1 gap-0.5 z-20 pointer-events-none group-hover:pointer-events-auto">
+                {quickEmojis.map(emoji => (
+                    <button 
+                        key={emoji} 
+                        className="p-1 hover:bg-white/10 rounded text-xs transition-transform hover:scale-125 active:scale-95 cursor-pointer" 
+                        onClick={() => onReact?.(message.id, emoji)}
+                        title={`React ${emoji}`}
+                    >
                         {emoji}
                     </button>
                 ))}
             </div>
 
-            <div className="message-avatar w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center font-bold text-sm text-indigo-400 border border-outline-variant shrink-0">
-                {message.username.charAt(0).toUpperCase()}
+            {/* Avatar */}
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-slate-700 to-slate-800 text-sky-300 font-bold flex items-center justify-center text-xs border border-white/10 shrink-0 shadow-sm">
+                {(message.username || 'A').charAt(0).toUpperCase()}
             </div>
             
-            <div className="message-content-wrapper flex-1 min-w-0">
-                <div className="message-header flex items-baseline gap-2 mb-1">
-                    <span className="message-username font-semibold text-sm text-on-surface">{message.username}</span>
-                    <span className="message-time text-xs text-on-surface-variant font-mono">{formatTime(message.timestamp)}</span>
+            {/* Body */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-xs text-slate-200">
+                        {message.username}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                        {formatTime(message.timestamp)}
+                    </span>
+                    
                     {message.isEncrypted && (
-                        <span className="message-e2ee-badge text-emerald-400 flex items-center gap-1 text-[11px]" title="End-to-End Encrypted">
-                            <Shield size={12} />
+                        <span className="text-emerald-400 flex items-center gap-1 text-[10px] font-mono font-semibold" title="Libsodium E2EE Encrypted">
+                            <Shield size={11} />
+                            <span>E2EE</span>
                         </span>
                     )}
-                    {message.isPrivate && <span className="message-private-badge text-xs bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded font-bold">PRIVATE</span>}
+                    
+                    {message.isPrivate && (
+                        <span className="text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.2 rounded font-mono font-bold">
+                            DIRECT
+                        </span>
+                    )}
                 </div>
 
+                {/* Text Message Content */}
                 {!isFile ? (
                     <div 
-                        className="message-text text-sm text-on-surface leading-relaxed whitespace-pre-wrap"
+                        className="text-xs text-slate-200 leading-relaxed break-words prose prose-invert max-w-none [&_p]:my-0.5 [&_pre]:bg-[#090d14] [&_pre]:border [&_pre]:border-white/10 [&_pre]:p-2 [&_pre]:rounded-lg [&_code]:text-sky-300 [&_code]:font-mono [&_a]:text-sky-400 [&_a]:underline"
                         dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
                     />
                 ) : (
-                    <div className="message-file-attachment">
+                    /* File Attachment Card */
+                    <div className="mt-1.5 max-w-md">
+                        {/* Media Preview: Image */}
                         {isImage && displayUrl && (
-                            <img src={displayUrl} alt={displayName} className="preview-media image" />
+                            <div className="rounded-xl overflow-hidden border border-white/10 mb-2 max-w-sm bg-black/40">
+                                <img 
+                                    src={displayUrl} 
+                                    alt={displayName} 
+                                    className="max-h-60 w-auto object-contain hover:scale-[1.01] transition-transform" 
+                                    loading="lazy"
+                                />
+                            </div>
                         )}
+
+                        {/* Media Preview: Video */}
                         {isVideo && displayUrl && (
-                            <video src={displayUrl} controls className="preview-media video" />
+                            <div className="rounded-xl overflow-hidden border border-white/10 mb-2 max-w-md bg-black">
+                                <video src={displayUrl} controls className="w-full max-h-64" />
+                            </div>
                         )}
+
+                        {/* Media Preview: Audio */}
                         {isAudio && displayUrl && (
-                            <audio src={displayUrl} controls className="preview-media audio" />
+                            <div className="p-2 rounded-xl border border-white/10 mb-2 bg-[#0e131d]">
+                                <audio src={displayUrl} controls className="w-full h-8" />
+                            </div>
                         )}
+
+                        {/* Media Preview: ZIP */}
                         {isZip && !message.encryptedFile && (
                             <ZipPreview filename={message.filename} />
                         )}
 
+                        {/* File Action Box */}
                         {displayUrl ? (
-                            <div className="file-download-box">
-                                <a href={displayUrl} download={displayName} className="file-link" target="_blank" rel="noopener noreferrer">
-                                    📁 {displayName}
+                            <div className="spotlight-card flex items-center justify-between p-2.5 rounded-xl border border-white/10 bg-[#0e1420]/80 gap-3">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                                        {isImage ? <ImageIcon size={16} /> : isVideo ? <Film size={16} /> : isAudio ? <Music size={16} /> : isZip ? <FileArchive size={16} /> : <FileText size={16} />}
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <a 
+                                            href={displayUrl} 
+                                            download={displayName} 
+                                            className="text-xs font-semibold text-sky-300 hover:text-sky-200 truncate underline-offset-2 hover:underline"
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                        >
+                                            {displayName}
+                                        </a>
+                                        {sizeMB && (
+                                            <span className="text-[10px] text-slate-400 font-mono">
+                                                {sizeMB} MB
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <a
+                                    href={displayUrl}
+                                    download={displayName}
+                                    className="btn-shimmer p-1.5 rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
+                                    title="Download File"
+                                >
+                                    <Download size={14} />
                                 </a>
-                                {sizeMB && <span className="file-size-info">({sizeMB} MB)</span>}
                             </div>
                         ) : (
-                            <button className="file-decrypt-button" onClick={() => onDecryptFile?.(message)}>
-                                🔒 Decrypt: {displayName}
+                            <button 
+                                onClick={() => onDecryptFile?.(message)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold transition-all cursor-pointer"
+                            >
+                                <Lock size={14} className="text-amber-400" />
+                                <span>Decrypt File: {displayName}</span>
                             </button>
                         )}
                     </div>
                 )}
 
+                {/* Reactions List */}
                 {message.reactions && Object.keys(message.reactions).length > 0 && (
-                    <div className="message-reactions-list">
-                        {Object.entries(message.reactions).map(([emoji, users]) => {
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                        {Object.entries(message.reactions).map(([emoji, users]: [string, any]) => {
                             const hasReacted = users.includes(currentUsername);
                             return (
                                 <button
                                     key={emoji}
-                                    className={`reaction-pill ${hasReacted ? 'active' : ''}`}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono font-medium transition-all border cursor-pointer ${
+                                        hasReacted 
+                                            ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm' 
+                                            : 'bg-white/[0.04] text-slate-400 hover:text-slate-200 border-white/10 hover:border-white/20'
+                                    }`}
                                     onClick={() => onReact?.(message.id, emoji)}
                                     title={`Reacted by: ${users.join(', ')}`}
                                 >
-                                    <span className="emoji">{emoji}</span>
-                                    <span className="count">{users.length}</span>
+                                    <span>{emoji}</span>
+                                    <span className="text-[10px] font-bold">{users.length}</span>
                                 </button>
                             );
                         })}

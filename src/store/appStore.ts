@@ -39,6 +39,10 @@ interface UIState {
     setShowPollModal: (show: boolean) => void;
     showTransferHistory: boolean;
     setShowTransferHistory: (show: boolean) => void;
+    showSearchModal: boolean;
+    setShowSearchModal: (show: boolean) => void;
+    isRightPanelOpen: boolean;
+    setIsRightPanelOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -50,6 +54,14 @@ export const useUIStore = create<UIState>((set) => ({
     
     showTransferHistory: false,
     setShowTransferHistory: (show) => set({ showTransferHistory: show }),
+
+    showSearchModal: false,
+    setShowSearchModal: (show) => set({ showSearchModal: show }),
+
+    isRightPanelOpen: true,
+    setIsRightPanelOpen: (open) => set((state) => ({ 
+        isRightPanelOpen: typeof open === 'function' ? open(state.isRightPanelOpen) : open 
+    })),
 }));
 
 interface ChatState {

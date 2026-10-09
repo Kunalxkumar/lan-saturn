@@ -1,52 +1,114 @@
 import React from 'react';
-import { Search, History, Bell, HelpCircle } from 'lucide-react';
+import { Search, History, Bell, Shield, Radio, Terminal, Sparkles } from 'lucide-react';
+import { useUIStore } from '../../store/appStore';
+
+interface TopNavBarProps {
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    currentUsername: string;
+    connectionStatus: string;
+}
 
 export default function TopNavBar({ 
     searchQuery, 
     setSearchQuery, 
     currentUsername,
     connectionStatus
-}) {
+}: TopNavBarProps) {
+    const { setShowTransferHistory, setShowSearchModal } = useUIStore();
+    const isConnected = connectionStatus === 'connected';
+
     return (
-        <nav className="flex justify-between items-center px-4 w-full h-14 bg-[#10141a] border-b border-[#30363d] shrink-0 z-20 relative">
+        <header className="flex justify-between items-center px-4 w-full h-13 bg-[#0a0d14]/90 backdrop-blur-md border-b border-white/[0.07] shrink-0 z-30 select-none">
+            {/* Left Brand & Connection */}
             <div className="flex items-center gap-3">
-                <span className="text-lg font-black text-[#dfe2eb] tracking-tight">LAN Saturn</span>
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-mono flex items-center gap-1.5 ${connectionStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-400' : 'bg-rose-400'}`}></span>
-                    {connectionStatus === 'connected' ? 'Connected' : 'Offline'}
-                </span>
-            </div>
+                <div className="flex items-center gap-2 group cursor-pointer">
+                    <div className="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/30 shadow-sm flex items-center justify-center">
+                        <span className="text-xs font-black tracking-widest text-sky-400">
+                            LS
+                        </span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-100 tracking-tight leading-none group-hover:text-sky-300 transition-colors">
+                            LAN Saturn
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 tracking-wider">
+                            v1.2.1 • Local Peer
+                        </span>
+                    </div>
+                </div>
 
-            {/* Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-sm mx-6">
-                <div className="relative w-full group">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
-                        className="w-full bg-[#181c22] border border-[#30363d] rounded-md py-1.5 pl-9 pr-3 text-xs text-[#dfe2eb] placeholder:text-gray-400 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2] transition-all" 
-                        placeholder="Search across channels..." 
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                <div className="h-4 w-px bg-white/10 mx-1 hidden sm:block" />
+
+                {/* Connection Status Pill */}
+                <div 
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium border transition-colors ${
+                        isConnected 
+                            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' 
+                            : 'bg-rose-500/10 text-rose-300 border-rose-500/20'
+                    }`}
+                    title={isConnected ? 'Connected to local LAN socket' : 'Socket disconnected'}
+                >
+                    <span className="relative flex h-2 w-2">
+                        {isConnected && (
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        )}
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${isConnected ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                    </span>
+                    <span>{isConnected ? 'LIVE LAN' : 'OFFLINE'}</span>
                 </div>
             </div>
 
+            {/* Middle: Command Palette / Smart Search Trigger */}
+            <div className="flex-1 max-w-md mx-4 hidden md:block">
+                <button 
+                    onClick={() => setShowSearchModal(true)}
+                    className="w-full flex items-center justify-between bg-[#101522]/80 hover:bg-[#141b2c] border border-white/[0.08] hover:border-sky-500/40 rounded-lg py-1.5 px-3 text-xs text-slate-400 hover:text-slate-200 transition-all shadow-inner group cursor-pointer"
+                >
+                    <div className="flex items-center gap-2 truncate">
+                        <Search size={14} className="text-slate-400 group-hover:text-sky-400 transition-colors shrink-0" />
+                        <span className="truncate">{searchQuery || 'Search channels, files, members...'}</span>
+                    </div>
+                    <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] font-mono text-slate-400 bg-white/[0.06] border border-white/10 px-1.5 py-0.5 rounded">
+                        <span className="text-[9px]">Ctrl</span> K
+                    </kbd>
+                </button>
+            </div>
+
+            {/* Right: Actions & User Info */}
             <div className="flex items-center gap-1.5">
-                <button className="text-gray-400 hover:text-gray-200 hover:bg-[#181c22] transition-colors p-1.5 rounded-full flex items-center justify-center" title="History">
-                    <History size={17} />
+                {/* Mobile Search button */}
+                <button
+                    onClick={() => setShowSearchModal(true)}
+                    className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-colors"
+                    title="Search"
+                >
+                    <Search size={16} />
                 </button>
-                <button className="text-gray-400 hover:text-gray-200 hover:bg-[#181c22] transition-colors p-1.5 rounded-full flex items-center justify-center relative" title="Notifications">
-                    <Bell size={17} />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
+
+                {/* Transfer History Trigger */}
+                <button 
+                    onClick={() => setShowTransferHistory(true)}
+                    className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-sky-300 hover:bg-white/[0.06] px-2.5 py-1.5 rounded-lg border border-transparent hover:border-white/10 transition-all cursor-pointer"
+                    title="View File Transfers"
+                >
+                    <History size={15} className="text-sky-400" />
+                    <span className="hidden sm:inline font-medium">Transfers</span>
                 </button>
-                <button className="text-gray-400 hover:text-gray-200 hover:bg-[#181c22] transition-colors p-1.5 rounded-full flex items-center justify-center hidden sm:flex" title="Help">
-                    <HelpCircle size={17} />
-                </button>
-                <div className="h-5 w-px bg-[#30363d] mx-1 hidden sm:block"></div>
-                <div className="ml-1 w-7 h-7 rounded-full border border-[#30363d] bg-[#5865f2]/20 text-indigo-300 font-bold flex items-center justify-center text-xs">
-                    {currentUsername ? currentUsername.charAt(0).toUpperCase() : 'A'}
+
+                {/* User Pill */}
+                <div className="flex items-center gap-2 pl-2 ml-1 border-l border-white/10">
+                    <div className="relative">
+                        <div className="w-7 h-7 rounded-lg bg-sky-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                            {currentUsername ? currentUsername.charAt(0).toUpperCase() : 'A'}
+                        </div>
+                        <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#0a0d14]" />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-200 hidden lg:inline max-w-[100px] truncate">
+                        {currentUsername}
+                    </span>
                 </div>
             </div>
-        </nav>
+        </header>
     );
 }

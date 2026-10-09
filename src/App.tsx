@@ -15,6 +15,8 @@ import TransferHistory from './components/TransferHistory';
 import ClipboardSync from './components/ClipboardSync';
 import SecurityPanel from './components/SecurityPanel';
 import Calendar from './components/Calendar';
+import SmartSearchModal from './components/SmartSearch';
+import { BarChart3 } from 'lucide-react';
 import useSocket from './hooks/useSocket';
 import useChatMessages from './hooks/chat/useChatMessages';
 import useSocketEvents from './hooks/socket/useSocketEvents';
@@ -26,7 +28,7 @@ import { decryptStreamFile, STREAM_CRYPTO_VERSION } from './lib/crypto';
 function App() {
     const [currentUsername, setCurrentUsername] = useState(localStorage.getItem('lanSaturn_username') || 'Anonymous');
     const { activeChannel, setActiveChannel, activeView, setActiveView, activeDmUser, setActiveDmUser } = useAppStore();
-    const { searchQuery, setSearchQuery, showPollModal, setShowPollModal, showTransferHistory, setShowTransferHistory } = useUIStore();
+    const { searchQuery, setSearchQuery, showPollModal, setShowPollModal, showTransferHistory, setShowTransferHistory, showSearchModal, setShowSearchModal } = useUIStore();
     const { isTyping, setIsTyping, typingUser, setTypingUser, isUploading, setIsUploading, uploadStatus, setUploadStatus } = useChatStore();
     const { channelPasswords, setChannelPasswords, joiningChannel, setJoiningChannel, joinPassword, setJoinPassword, joinInvite, setJoinInvite } = useSecurityStore();
     const {
@@ -134,6 +136,18 @@ function App() {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
     }, [messages, activeChannel, activeDmUser, activeView]);
+
+    // Global Command Palette / Smart Search Shortcut (Ctrl+K / Cmd+K)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setShowSearchModal(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [setShowSearchModal]);
 
     // --- Handlers ---
 
@@ -400,12 +414,24 @@ function App() {
     });
 
     const composerDisabled = activeView === 'dm' && !activeDmUser;
-    const title = activeView === 'dm' ? `@${activeDmUser || 'direct-messages'}` : activeView === 'notes' ? '📝 Shared Notes' : activeView === 'filebrowser' ? '📂 Remote File Browser' : activeView === 'clipboardsync' ? '📋 Clipboard Sync' : activeView === 'security' ? '🛡️ Security Panel' : activeView === 'calendar' ? '📅 Shared Calendar' : `#${activeChannel}`;
+    const title = activeView === 'dm' 
+        ? `@${activeDmUser || 'direct-messages'}` 
+        : activeView === 'notes' 
+            ? 'Shared Notes' 
+            : activeView === 'filebrowser' 
+                ? 'Remote File Browser' 
+                : activeView === 'clipboardsync' 
+                    ? 'Clipboard Sync' 
+                    : activeView === 'security' 
+                        ? 'Security & Access Control' 
+                        : activeView === 'calendar' 
+                            ? 'Shared Calendar' 
+                            : `#${activeChannel}`;
 
     // --- Render ---
 
     return (
-        <div className="flex flex-col h-screen w-full bg-[#10141a] text-[#dfe2eb] overflow-hidden antialiased font-sans">
+        <div className="flex flex-col h-screen w-full bg-[#07090e] bg-space-ambient text-slate-100 overflow-hidden antialiased font-sans select-none">
             <TopNavBar 
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -429,7 +455,7 @@ function App() {
                     setCurrentUsername={setCurrentUsername}
                 />
 
-                <main className="flex-1 flex flex-col h-full bg-[#0D1117] relative z-0 min-w-0">
+                <main className="flex-1 flex flex-col h-full bg-[#090c13] relative z-0 min-w-0">
                     <ChatHeader 
                         activeView={activeView}
                         activeChannel={activeChannel}
@@ -457,7 +483,7 @@ function App() {
                             <MessageList messages={visibleMessages} searchQuery={searchQuery} messagesEndRef={messagesEndRef} onDecryptFile={decryptFileMessage} onReact={sendReaction} currentUsername={currentUsername} />
 
                             {activeView === 'server' && polls.length > 0 && (
-                                <div className="absolute right-4 top-16 w-80 space-y-4 max-h-[50vh] overflow-y-auto z-10 scrollbar-thin">
+                                <div className="absolute right-4 top-16 w-80 space-y-4 max-h-[50vh] overflow-y-auto z-10 custom-scrollbar">
                                     {polls.filter(p => !p.closed).map(poll => (
                                         <Poll key={poll.id} poll={poll} currentUsername={currentUsername} onVote={votePoll} onClose={closePoll} />
                                     ))}
@@ -465,49 +491,51 @@ function App() {
                             )}
 
                             {isTyping && (
-                                <div className="px-6 py-1.5 text-xs text-[#c6c5d7] italic flex-none animate-pulse">
+                                <div className="px-6 py-1 text-xs text-sky-400 font-mono italic flex-none animate-pulse">
                                     {typingUser} is typing...
                                 </div>
                             )}
 
                             {composerDisabled ? (
-                                <div className="p-6 text-center text-[#c6c5d7] italic bg-[#10141a] border-t border-[#30363d] flex-none">
-                                    Choose an online user to start a DM.
+                                <div className="p-6 text-center text-slate-500 italic bg-[#0c101a] border-t border-white/[0.06] flex-none text-xs">
+                                    Choose an online peer from the roster to start a direct message thread.
                                 </div>
                             ) : (
-                                <div className="flex flex-col p-3 bg-gradient-to-t from-[#0D1117] via-[#0D1117] to-transparent flex-none relative z-20">
+                                <div className="flex flex-col bg-gradient-to-t from-[#090c13] via-[#090c13] to-transparent flex-none relative z-20">
                                     {isUploading && (
-                                        <div className="mx-2 mb-2 px-3 py-2 rounded-lg bg-[#161b22] border border-[#30363d] flex items-center justify-between shadow-md">
-                                            <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 truncate mr-2">
-                                                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+                                        <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-[#121826] border border-sky-500/30 flex items-center justify-between shadow-lg">
+                                            <div className="flex items-center gap-2 text-xs font-mono text-sky-300 truncate mr-2">
+                                                <div className="w-2 h-2 rounded-full bg-sky-400 animate-pulse shrink-0" />
                                                 <span className="truncate">{uploadStatus}</span>
                                             </div>
                                             <button
                                                 onClick={handleCancelUpload}
-                                                className="text-xs bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded transition-colors font-sans shrink-0 cursor-pointer"
+                                                className="text-xs bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white px-2.5 py-1 rounded-md transition-colors font-mono shrink-0 cursor-pointer"
                                                 title="Cancel ongoing upload"
                                             >
                                                 Cancel
                                             </button>
                                         </div>
                                     )}
-                                    <div className="flex items-end gap-2">
-                                        <MessageComposer
-                                            activeChannel={activeChannel}
-                                            onSendMessage={sendMessage}
-                                            onTyping={handleTyping}
-                                            onTypingStop={handleTypingStop}
-                                            onFileUpload={handleFileUpload}
-                                            isUploading={isUploading}
-                                            uploadStatus={uploadStatus}
-                                        />
+                                    <div className="flex items-end gap-2 pr-4">
+                                        <div className="flex-1 min-w-0">
+                                            <MessageComposer
+                                                activeChannel={activeChannel}
+                                                onSendMessage={sendMessage}
+                                                onTyping={handleTyping}
+                                                onTypingStop={handleTypingStop}
+                                                onFileUpload={handleFileUpload}
+                                                isUploading={isUploading}
+                                                uploadStatus={uploadStatus}
+                                            />
+                                        </div>
                                         {activeView === 'server' && (
                                             <button 
-                                                className="h-11 w-11 bg-[#181c22] hover:bg-[#5865f2] hover:text-white text-lg rounded-xl transition-colors flex items-center justify-center shrink-0 border border-[#30363d] shadow-md text-[#c6c5d7] cursor-pointer"
+                                                className="h-10 w-10 mb-3 bg-[#121826] hover:bg-sky-500/20 text-slate-400 hover:text-sky-300 rounded-xl transition-all flex items-center justify-center shrink-0 border border-white/[0.08] hover:border-sky-500/40 shadow-md cursor-pointer"
                                                 onClick={() => setShowPollModal(true)} 
                                                 title="Create Poll"
                                             >
-                                                📊
+                                                <BarChart3 size={18} />
                                             </button>
                                         )}
                                     </div>
@@ -528,6 +556,7 @@ function App() {
                 />
             </div>
 
+            {/* Modals & Overlays */}
             {showPollModal && (
                 <CreatePollModal onSubmit={createPoll} onCancel={() => setShowPollModal(false)} />
             )}
@@ -535,6 +564,16 @@ function App() {
             {showTransferHistory && (
                 <TransferHistory onClose={() => setShowTransferHistory(false)} />
             )}
+
+            <SmartSearchModal 
+                messages={messages}
+                onSelectMessage={(msg) => {
+                    if (msg.channel) {
+                        setActiveChannel(msg.channel);
+                        setActiveView('server');
+                    }
+                }}
+            />
 
             <JoinChannelModal 
                 joiningChannel={joiningChannel}

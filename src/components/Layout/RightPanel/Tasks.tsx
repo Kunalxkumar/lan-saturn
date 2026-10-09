@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { CheckSquare, Square, Plus, Trash2 } from 'lucide-react';
+import { CheckSquare, Square, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 
-export default function Tasks({ tasks, onToggle, onDelete, onCreate }) {
+interface TasksProps {
+    tasks: any[];
+    onToggle: (id: any) => void;
+    onDelete: (id: any) => void;
+    onCreate: (text: string) => void;
+}
+
+export default function Tasks({ tasks, onToggle, onDelete, onCreate }: TasksProps) {
     const [newTaskText, setNewTaskText] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (newTaskText.trim()) {
             onCreate(newTaskText.trim());
@@ -13,42 +20,73 @@ export default function Tasks({ tasks, onToggle, onDelete, onCreate }) {
     };
 
     return (
-        <div className="right-sidebar-section tasks-section p-4 flex flex-col gap-3">
-            <h3 className="section-title text-xs font-bold uppercase tracking-wider text-gray-400">Channel Tasks</h3>
+        <div className="p-3 flex flex-col gap-3">
+            <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-slate-400 uppercase tracking-wider px-1">
+                <span>Room Action Items</span>
+                <span className="text-[10px] text-sky-400 font-mono">
+                    {tasks.filter(t => t.done).length}/{tasks.length} Done
+                </span>
+            </div>
+
+            {/* Task creation input */}
+            <form className="flex items-center gap-1.5" onSubmit={handleSubmit}>
+                <input
+                    type="text"
+                    className="flex-1 bg-[#121824] border border-white/[0.08] focus:border-sky-500/50 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none transition-all shadow-inner"
+                    placeholder="New task for this room..."
+                    value={newTaskText}
+                    onChange={e => setNewTaskText(e.target.value)}
+                />
+                <button 
+                    type="submit" 
+                    className="btn-shimmer p-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer" 
+                    disabled={!newTaskText.trim()}
+                    title="Add Task"
+                >
+                    <Plus size={15} />
+                </button>
+            </form>
             
-            <div className="task-cards-list flex flex-col gap-1.5 max-h-60 overflow-y-auto">
+            {/* Task list */}
+            <div className="flex flex-col gap-1.5 max-h-[calc(100vh-220px)] overflow-y-auto custom-scrollbar">
                 {tasks.length === 0 ? (
-                    <div className="empty-state flex flex-col items-center justify-center py-6 text-gray-500 gap-1">
-                        <CheckSquare size={28} className="empty-icon text-gray-600" />
-                        <p className="text-xs">No tasks yet.</p>
+                    <div className="flex flex-col items-center justify-center py-8 text-slate-500 gap-2 bg-white/[0.02] rounded-xl border border-white/5">
+                        <CheckCircle2 size={24} className="text-slate-600 stroke-[1.5]" />
+                        <p className="text-xs">No pending items for this channel.</p>
                     </div>
                 ) : (
                     tasks.map(task => (
-                        <div key={task.id} className={`task-card flex items-center gap-2 p-2 rounded-lg bg-saturn-card/40 border border-white/5 ${task.done ? 'opacity-50 line-through' : ''}`}>
-                            <button className="task-check-btn text-indigo-400 hover:text-indigo-300" onClick={() => onToggle(task.id)}>
-                                {task.done ? <CheckSquare size={16} className="text-emerald-400" /> : <Square size={16} />}
+                        <div 
+                            key={task.id} 
+                            className={`group spotlight-card flex items-center gap-2.5 p-2 rounded-lg border border-white/[0.06] transition-all ${
+                                task.done ? 'opacity-60 bg-white/[0.02]' : 'hover:border-sky-500/30'
+                            }`}
+                        >
+                            <button 
+                                className="text-slate-400 hover:text-sky-400 shrink-0 cursor-pointer transition-colors" 
+                                onClick={() => onToggle(task.id)}
+                                title={task.done ? 'Mark incomplete' : 'Mark complete'}
+                            >
+                                {task.done ? (
+                                    <CheckSquare size={16} className="text-emerald-400" />
+                                ) : (
+                                    <Square size={16} className="text-slate-500 group-hover:text-sky-400" />
+                                )}
                             </button>
-                            <span className="task-title flex-1 text-xs text-gray-200 truncate">{task.text}</span>
-                            <button className="task-delete-btn text-gray-500 hover:text-rose-400 transition-colors p-1" onClick={() => onDelete(task.id)}>
-                                <Trash2 size={14} />
+                            <span className={`flex-1 text-xs text-slate-200 truncate ${task.done ? 'line-through text-slate-400' : 'font-medium'}`}>
+                                {task.text}
+                            </span>
+                            <button 
+                                className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-1 rounded hover:bg-rose-500/10 cursor-pointer" 
+                                onClick={() => onDelete(task.id)}
+                                title="Delete task"
+                            >
+                                <Trash2 size={13} />
                             </button>
                         </div>
                     ))
                 )}
             </div>
-
-            <form className="add-task-form flex items-center gap-2 mt-1" onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    className="add-task-input flex-1 bg-slate-800/80 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 placeholder-gray-500 outline-none focus:border-indigo-500"
-                    placeholder="Add a task..."
-                    value={newTaskText}
-                    onChange={e => setNewTaskText(e.target.value)}
-                />
-                <button type="submit" className="add-task-submit bg-indigo-600 hover:bg-indigo-500 text-white p-1.5 rounded-lg disabled:opacity-40 transition-colors" disabled={!newTaskText.trim()}>
-                    <Plus size={16} />
-                </button>
-            </form>
         </div>
     );
 }
