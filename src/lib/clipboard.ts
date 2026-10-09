@@ -1,81 +1,31 @@
 /**
- * Helper bridge for Tauri IPC clipboard operations.
- * Gracefully falls back to browser Clipboard API if not running inside Tauri.
+ * Lean native Clipboard helper using the standard Web Clipboard API.
  */
 
-export const isTauri = () => {
-    return typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
-};
-
-export async function readClipboardText() {
-    if (isTauri()) {
-        try {
-            const { invoke } = window.__TAURI__.core;
-            return await invoke('get_clipboard_text');
-        } catch (err) {
-            console.error('Tauri clipboard read failed:', err);
-            return '';
+export async function readClipboardText(): Promise<string> {
+    try {
+        if (navigator.clipboard?.readText) {
+            return await navigator.clipboard.readText();
         }
-    } else {
-        try {
-            if (navigator.clipboard && navigator.clipboard.readText) {
-                return await navigator.clipboard.readText();
-            }
-        } catch (err) {
-            console.warn('Browser clipboard read blocked/not allowed:', err);
-        }
-        return '';
+    } catch (err) {
+        console.warn('Clipboard read unavailable:', err);
     }
+    return '';
 }
 
-export async function writeClipboardText(text) {
-    if (isTauri()) {
-        try {
-            const { invoke } = window.__TAURI__.core;
-            await invoke('set_clipboard_text', { text });
+export async function writeClipboardText(text: string): Promise<boolean> {
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
             return true;
-        } catch (err) {
-            console.error('Tauri clipboard write failed:', err);
-            return false;
         }
-    } else {
-        try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(text);
-                return true;
-            }
-        } catch (err) {
-            console.error('Browser clipboard write failed:', err);
-        }
-        return false;
+    } catch (err) {
+        console.error('Clipboard write failed:', err);
     }
+    return false;
 }
 
-export function watchClipboard(onChanged) {
-    if (isTauri()) {
-        try {
-            const { invoke } = window.__TAURI__.core;
-            const { listen } = window.__TAURI__.event;
-            
-            // Start Rust watcher polling loop
-            invoke('start_clipboard_watch').catch(err => {
-                console.error('Failed to start Tauri clipboard watcher:', err);
-            });
-
-            // Listen to events from Rust
-            const unlistenPromise = listen('clipboard-changed', (event) => {
-                onChanged(event.payload);
-            });
-
-            return () => {
-                unlistenPromise.then(unlisten => unlisten());
-            };
-        } catch (err) {
-            console.error('Failed to set up Tauri clipboard listeners:', err);
-        }
-    }
-    
-    // Fallback: browser polling (only works if tab is focused)
+export function watchClipboard(onChanged: (text: string) => void) {
     let lastText = '';
     const interval = setInterval(async () => {
         if (document.hasFocus()) {
