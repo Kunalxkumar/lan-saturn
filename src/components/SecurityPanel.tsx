@@ -141,7 +141,7 @@ export default function SecurityPanel({
                             </div>
                         </div>
 
-                        <span className={`text-[11px] font-mono font-semibold px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${
+                        <span className={`text-[11px] font-mono font-semibold px-2.5 py-1 rounded-md border flex items-center gap-1.5 ${
                             cryptoReady 
                                 ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' 
                                 : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
@@ -273,7 +273,7 @@ export default function SecurityPanel({
                             </div>
                         </div>
 
-                        <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                        <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
                             {devices.length} Nodes
                         </span>
                     </div>
@@ -302,11 +302,11 @@ export default function SecurityPanel({
                                             <td className="p-3 text-slate-300 font-sans">{cleanUserAgent(device.userAgent)}</td>
                                             <td className="p-3">
                                                 {device.trusted ? (
-                                                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px] border border-emerald-500/20">
+                                                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md text-[10px] border border-emerald-500/20">
                                                         Trusted
                                                     </span>
                                                 ) : (
-                                                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full text-[10px] border border-amber-500/20">
+                                                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md text-[10px] border border-amber-500/20">
                                                         Pending
                                                     </span>
                                                 )}

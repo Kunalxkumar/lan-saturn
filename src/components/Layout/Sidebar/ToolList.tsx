@@ -48,7 +48,7 @@ export default function ToolList({ activeView, setActiveView }: ToolListProps) {
                                 )}
                                 <Icon 
                                     size={14} 
-                                    className={`shrink-0 transition-transform group-hover:scale-110 ${
+                                    className={`shrink-0 transition-colors ${
                                         isActive ? 'text-sky-400' : 'text-slate-400 group-hover:text-slate-300'
                                     }`} 
                                 />

@@ -24,7 +24,7 @@ export default function UserProfile({ currentUsername, setCurrentUsername }: Use
         <div className="p-2.5 rounded-xl bg-[#101520]/80 border border-white/[0.08] hover:border-white/[0.14] transition-all flex items-center gap-2.5 shadow-sm group">
             {/* Avatar with pulse ring */}
             <div className="relative shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-300 font-bold flex items-center justify-center text-xs shadow-sm">
                     {currentUsername ? currentUsername.charAt(0).toUpperCase() : 'A'}
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-[#101520]" />

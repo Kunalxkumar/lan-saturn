@@ -60,7 +60,7 @@ export default function ChatHeader({
             <div className="flex items-center gap-3 shrink-0">
                 {/* E2EE Cryptographic Pill */}
                 <div 
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono border transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono border transition-all ${
                         isEncrypted && cryptoReady
                             ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
                             : 'bg-white/[0.04] text-slate-400 border-white/5'

@@ -64,7 +64,7 @@ export default function RightPanel({
                         <CheckSquare size={13} />
                         <span>Tasks</span>
                         {taskCount > 0 && (
-                            <span className="text-[9px] font-mono px-1 rounded-full bg-amber-500/20 text-amber-300 font-bold">
+                            <span className="text-[9px] font-mono px-1 rounded-md bg-amber-500/20 text-amber-300 font-bold">
                                 {taskCount}
                             </span>
                         )}

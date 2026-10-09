@@ -232,7 +232,7 @@ export default function SharedNotes({ socket, channel, username }: SharedNotesPr
                                 <h2 className="text-sm font-bold text-slate-100 font-mono">
                                     {activeNote}
                                 </h2>
-                                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
                                     Live Sync
                                 </span>
                             </div>

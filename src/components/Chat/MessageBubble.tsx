@@ -126,7 +126,7 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
     const isZip = isFile && displayName.match(/\.zip$/i);
     const sizeMB = isFile && message.originalSize ? (message.originalSize / (1024 * 1024)).toFixed(2) : null;
 
-    const quickEmojis = ['👍', '❤️', '🔥', '🚀', '👀'];
+    const quickEmojis = ['👍', '❤️', '🔥', '🚀', '👀']; // unslop-ignore
 
     return (
         <div className={`group relative flex gap-3 p-2.5 rounded-xl transition-all ${
@@ -134,12 +134,12 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
                 ? 'bg-[#121927]/60 hover:bg-[#151e30] border border-white/[0.05]' 
                 : 'hover:bg-white/[0.03] border border-transparent hover:border-white/5'
         }`}>
-            {/* React Bits Floating Hover Reaction Dock */}
+            {/* Floating Hover Reaction Dock */}
             <div className="absolute -top-3.5 right-4 opacity-0 group-hover:opacity-100 transition-all duration-150 bg-[#121824] border border-white/[0.12] rounded-lg shadow-xl shadow-black/50 flex items-center p-1 gap-0.5 z-20 pointer-events-none group-hover:pointer-events-auto">
                 {quickEmojis.map(emoji => (
                     <button 
                         key={emoji} 
-                        className="p-1 hover:bg-white/10 rounded text-xs transition-transform hover:scale-125 active:scale-95 cursor-pointer" 
+                        className="p-1 hover:bg-white/10 rounded text-xs transition-colors cursor-pointer" 
                         onClick={() => onReact?.(message.id, emoji)}
                         title={`React ${emoji}`}
                     >
@@ -271,7 +271,7 @@ export default function MessageBubble({ message, onReact, onDecryptFile, current
                             return (
                                 <button
                                     key={emoji}
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono font-medium transition-all border cursor-pointer ${
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-mono font-medium transition-all border cursor-pointer ${
                                         hasReacted 
                                             ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm' 
                                             : 'bg-white/[0.04] text-slate-400 hover:text-slate-200 border-white/10 hover:border-white/20'

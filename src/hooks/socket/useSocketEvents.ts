@@ -211,7 +211,7 @@ export default function useSocketEvents({
             callbacksRef.current.setJoiningChannel(data.channel);
         };
         const onSecurityError = (data) => {
-            alert(`🛡️ Security Check: ${data.message}`);
+            alert(`Security Notice: ${data.message}`);
         };
 
         socket.on('receive_message', onReceiveMessage);

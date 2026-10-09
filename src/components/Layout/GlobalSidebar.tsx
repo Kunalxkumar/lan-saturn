@@ -59,7 +59,7 @@ export default function GlobalSidebar({ activeView, setActiveView }: GlobalSideb
                                 }`}
                                 title={label}
                             >
-                                <Icon size={18} className="transition-transform group-hover:scale-110" />
+                                <Icon size={18} />
                             </button>
 
                             {/* Active Dock Indicator */}

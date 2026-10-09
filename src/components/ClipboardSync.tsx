@@ -114,7 +114,7 @@ export default function ClipboardSync({ socket, username }: ClipboardSyncProps) 
 
                     <div className="flex items-center gap-4">
                         {statusMessage && (
-                            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 animate-pulse">
+                            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-md border border-emerald-500/20 animate-pulse">
                                 {statusMessage}
                             </span>
                         )}
@@ -142,7 +142,7 @@ export default function ClipboardSync({ socket, username }: ClipboardSyncProps) 
                     <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] mb-4 shrink-0">
                         <div className="flex items-center gap-2">
                             <span className="font-bold text-xs text-slate-100">Broadcast History</span>
-                            <span className="text-[10px] font-mono text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">
+                            <span className="text-[10px] font-mono text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
                                 {history.length} Clips
                             </span>
                         </div>

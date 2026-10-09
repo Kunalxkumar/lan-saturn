@@ -172,30 +172,30 @@ export default function SmartSearchModal({ messages, onSelectMessage }: SmartSea
                     </kbd>
                 </div>
 
-                {/* Filter Quick Pills */}
+                {/* Filter Quick Chips */}
                 <div className="px-3.5 py-2 border-b border-white/[0.06] bg-[#090d16] flex items-center gap-1.5 overflow-x-auto text-xs custom-scrollbar">
                     <span className="text-[10px] font-mono uppercase text-slate-500 mr-1 shrink-0">Filters:</span>
                     <button 
                         onClick={() => addFilter('has:file')}
-                        className="px-2 py-0.5 rounded-full bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
+                        className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
                     >
                         + has:file
                     </button>
                     <button 
                         onClick={() => addFilter('in:general')}
-                        className="px-2 py-0.5 rounded-full bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
+                        className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
                     >
                         + in:general
                     </button>
                     <button 
                         onClick={() => addFilter('type:dm')}
-                        className="px-2 py-0.5 rounded-full bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
+                        className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
                     >
                         + type:dm
                     </button>
                     <button 
                         onClick={() => addFilter('from:')}
-                        className="px-2 py-0.5 rounded-full bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
+                        className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-sky-500/15 hover:text-sky-300 border border-white/5 text-[11px] font-mono text-slate-400 transition-colors shrink-0 cursor-pointer"
                     >
                         + from:user
                     </button>
