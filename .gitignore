@@ -43,4 +43,5 @@ src-tauri/binaries/
 graphify-out/
 .playwright-mcp/
 *.spec
+tmp/
 

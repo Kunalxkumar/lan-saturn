@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, History, Bell, Shield, Radio, Terminal, Sparkles } from 'lucide-react';
 import { useUIStore } from '../../store/appStore';
+import SaturnBrandIcon from '../common/SaturnBrandIcon';
 
 interface TopNavBarProps {
     searchQuery: string;
@@ -23,10 +24,8 @@ export default function TopNavBar({
             {/* Left Brand & Connection */}
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 group cursor-pointer">
-                    <div className="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/30 shadow-sm flex items-center justify-center">
-                        <span className="text-xs font-black tracking-widest text-sky-400">
-                            LS
-                        </span>
+                    <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/25 shadow-sm flex items-center justify-center p-1 group-hover:border-sky-500/40 transition-colors">
+                        <SaturnBrandIcon size={22} />
                     </div>
                     <div className="flex flex-col">
                         <span className="text-sm font-bold text-slate-100 tracking-tight leading-none group-hover:text-sky-300 transition-colors">

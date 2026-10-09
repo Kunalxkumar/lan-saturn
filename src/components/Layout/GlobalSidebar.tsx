@@ -6,9 +6,9 @@ import {
     Calendar, 
     Clipboard, 
     ShieldAlert, 
-    Plus,
-    Layers
+    Plus
 } from 'lucide-react';
+import SaturnBrandIcon from '../common/SaturnBrandIcon';
 
 interface GlobalSidebarProps {
     activeView: string;
@@ -33,8 +33,8 @@ export default function GlobalSidebar({ activeView, setActiveView }: GlobalSideb
                 className="relative group flex items-center justify-center p-1"
                 title="Workspace: Saturn Hub"
             >
-                <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 group-hover:text-white group-hover:bg-sky-500/25 transition-all shadow-sm">
-                    <Layers size={18} />
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center group-hover:bg-sky-500/20 group-hover:border-sky-500/40 transition-all shadow-sm p-1.5">
+                    <SaturnBrandIcon size={24} />
                 </div>
                 {/* Active Indicator bar on left */}
                 {activeView === 'server' && (

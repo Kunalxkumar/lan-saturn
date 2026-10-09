@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Planet Sphere Radial Gradient -->
+    <radialGradient id="saturnSphere" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="25%" stop-color="#0284c7" />
+      <stop offset="55%" stop-color="#0f172a" />
+      <stop offset="85%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#04060a" />
+    </radialGradient>
+
+    <!-- Atmospheric Rim Glow -->
+    <radialGradient id="atmosphereGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="82%" stop-color="#38bdf8" stop-opacity="0" />
+      <stop offset="94%" stop-color="#38bdf8" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.75" />
+    </radialGradient>
+
+    <!-- Ring Linear Gradients with Golden LAN Accents -->
+    <linearGradient id="ringGradMain" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.2" />
+      <stop offset="20%" stop-color="#38bdf8" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.8" />
+      <stop offset="80%" stop-color="#38bdf8" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.2" />
+    </linearGradient>
+
+    <linearGradient id="ringGradInner" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.1" />
+      <stop offset="35%" stop-color="#38bdf8" stop-opacity="0.8" />
+      <stop offset="65%" stop-color="#0284c7" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- Planet Occlusion Mask for Back Arc of Ring -->
+    <mask id="backRingMask">
+      <rect x="0" y="0" width="512" height="512" fill="#ffffff" />
+      <!-- Cut out the planet front so back ring hides behind planet -->
+      <circle cx="256" cy="256" r="110" fill="#000000" />
+    </mask>
+
+    <!-- Front Ring Clip Mask -->
+    <clipPath id="frontRingClip">
+      <!-- Only keep lower diagonal half where ring passes in front of planet -->
+      <polygon points="0,256 512,120 512,512 0,512" />
+    </clipPath>
+
+    <!-- Soft Glow Filter -->
+    <filter id="nodeGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Group with Orbit Angle Tilt (-23 degrees) -->
+  <g transform="rotate(-23 256 256)">
+    <!-- 1. BACK RING SEGMENTS (Behind Planet) -->
+    <g mask="url(#backRingMask)">
+      <!-- Outer Data Orbit Line -->
+      <ellipse cx="256" cy="256" rx="236" ry="68" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="5 7" opacity="0.5" />
+      <!-- Main Solid Ring -->
+      <ellipse cx="256" cy="256" rx="212" ry="60" fill="none" stroke="url(#ringGradMain)" stroke-width="14" opacity="0.85" />
+      <!-- Inner Thin Ring -->
+      <ellipse cx="256" cy="256" rx="182" ry="51" fill="none" stroke="url(#ringGradInner)" stroke-width="6" opacity="0.7" />
+    </g>
+
+    <!-- 2. SATURN PLANET BODY -->
+    <g>
+      <!-- Base Core Sphere -->
+      <circle cx="256" cy="256" r="110" fill="url(#saturnSphere)" />
+
+      <!-- Latitudinal Atmosphere Bands -->
+      <g opacity="0.15">
+        <path d="M 148 240 Q 256 255 364 240" stroke="#38bdf8" stroke-width="5" fill="none" />
+        <path d="M 152 260 Q 256 275 360 260" stroke="#f59e0b" stroke-width="4" fill="none" />
+        <path d="M 162 282 Q 256 295 350 282" stroke="#38bdf8" stroke-width="4" fill="none" />
+        <path d="M 178 305 Q 256 317 334 305" stroke="#0284c7" stroke-width="3" fill="none" />
+      </g>
+
+      <!-- Atmospheric Edge Corona Glow -->
+      <circle cx="256" cy="256" r="110" fill="url(#atmosphereGlow)" />
+
+      <!-- Ring Shadow Across Planet Disk -->
+      <path d="M 146 256 Q 256 290 366 256 Q 256 276 146 256 Z" fill="#04060a" opacity="0.65" />
+    </g>
+
+    <!-- 3. FRONT RING SEGMENTS (In Front of Planet) -->
+    <g clip-path="url(#frontRingClip)">
+      <!-- Outer Data Orbit Line -->
+      <ellipse cx="256" cy="256" rx="236" ry="68" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="5 7" opacity="0.75" />
+      <!-- Main Solid Ring -->
+      <ellipse cx="256" cy="256" rx="212" ry="60" fill="none" stroke="url(#ringGradMain)" stroke-width="14" opacity="0.95" />
+      <!-- Inner Thin Ring -->
+      <ellipse cx="256" cy="256" rx="182" ry="51" fill="none" stroke="url(#ringGradInner)" stroke-width="6" opacity="0.8" />
+    </g>
+
+    <!-- 4. LAN MESH NODES (Peer Satellites along Orbit) -->
+    <!-- Node A: West Flank (Client Peer 1) -->
+    <g filter="url(#nodeGlow)">
+      <circle cx="20" cy="256" r="6" fill="#38bdf8" />
+      <circle cx="20" cy="256" r="12" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity="0.5" />
+    </g>
+
+    <!-- Node B: Front Arc (Broadcasting Host) -->
+    <g filter="url(#nodeGlow)">
+      <circle cx="256" cy="324" r="7.5" fill="#f59e0b" />
+      <circle cx="256" cy="324" r="15" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="2 3" opacity="0.6" />
+      <circle cx="256" cy="324" r="3" fill="#ffffff" />
+    </g>
+
+    <!-- Node C: East Flank (Client Peer 2) -->
+    <g filter="url(#nodeGlow)">
+      <circle cx="492" cy="256" r="6" fill="#38bdf8" />
+      <circle cx="492" cy="256" r="12" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity="0.5" />
+    </g>
+
+    <!-- Node D: Upper North Orbital Satellite -->
+    <g filter="url(#nodeGlow)">
+      <circle cx="380" cy="204" r="4.5" fill="#38bdf8" />
+      <circle cx="380" cy="204" r="9" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.4" />
+    </g>
+  </g>
+</svg>

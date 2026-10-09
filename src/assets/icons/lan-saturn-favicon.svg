@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <radialGradient id="favSphere" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="40%" stop-color="#0284c7" />
+      <stop offset="85%" stop-color="#0a0f1d" />
+      <stop offset="100%" stop-color="#04060a" />
+    </radialGradient>
+    <linearGradient id="favRing" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.4" />
+      <stop offset="30%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="70%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.4" />
+    </linearGradient>
+    <mask id="favBackRingMask">
+      <rect x="0" y="0" width="32" height="32" fill="#fff" />
+      <circle cx="16" cy="16" r="7" fill="#000" />
+    </mask>
+    <clipPath id="favFrontRingClip">
+      <polygon points="0,16 32,8 32,32 0,32" />
+    </clipPath>
+  </defs>
+
+  <g transform="rotate(-23 16 16)">
+    <!-- Back Ring (Hidden behind planet sphere) -->
+    <ellipse cx="16" cy="16" rx="14" ry="4.2" fill="none" stroke="url(#favRing)" stroke-width="2.2" mask="url(#favBackRingMask)" />
+
+    <!-- Planet Sphere -->
+    <circle cx="16" cy="16" r="7" fill="url(#favSphere)" />
+    <circle cx="16" cy="16" r="7" fill="none" stroke="#38bdf8" stroke-width="0.75" stroke-opacity="0.5" />
+
+    <!-- Front Ring (Crosses over planet surface) -->
+    <ellipse cx="16" cy="16" rx="14" ry="4.2" fill="none" stroke="url(#favRing)" stroke-width="2.2" clip-path="url(#favFrontRingClip)" />
+
+    <!-- Mesh Node Accents -->
+    <!-- Host Node (Front center) -->
+    <circle cx="16" cy="20.2" r="1.4" fill="#f59e0b" />
+    <circle cx="16" cy="20.2" r="0.6" fill="#ffffff" />
+    <!-- Client Node 1 (West) -->
+    <circle cx="2" cy="16" r="1.1" fill="#38bdf8" />
+    <!-- Client Node 2 (East) -->
+    <circle cx="30" cy="16" r="1.1" fill="#38bdf8" />
+  </g>
+</svg>
