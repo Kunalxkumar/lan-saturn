@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { SpotlightCard } from '../ReactBits';
 
 function ZipPreview({ filename }: { filename: string }) {
     const [files, setFiles] = useState<any[]>([]);
@@ -220,7 +221,7 @@ export default function MessageBubble({ message, onReact, onDecryptFile, onDownl
 
                         {/* File Action Box */}
                         {displayUrl ? (
-                            <div className="spotlight-card flex items-center justify-between p-2.5 rounded-xl border border-white/10 bg-[#0e1420]/80 gap-3">
+                            <SpotlightCard className="flex items-center justify-between p-2.5 gap-3">
                                 <div className="flex items-center gap-2.5 min-w-0">
                                     <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
                                         {isImage ? <ImageIcon size={16} /> : isVideo ? <Film size={16} /> : isAudio ? <Music size={16} /> : isZip ? <FileArchive size={16} /> : <FileText size={16} />}
@@ -272,7 +273,7 @@ export default function MessageBubble({ message, onReact, onDecryptFile, onDownl
                                         <Download size={14} />
                                     </a>
                                 )}
-                            </div>
+                            </SpotlightCard>
                         ) : (
                             <button 
                                 onClick={() => onDecryptFile?.(message)}

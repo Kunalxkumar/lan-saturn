@@ -4,6 +4,8 @@ import Tasks from './Tasks';
 import { Users, CheckSquare, X, Wifi } from 'lucide-react';
 import { useUIStore } from '../../../store/appStore';
 
+import { CountUp } from '../../ReactBits';
+
 interface RightPanelProps {
     users: any[];
     currentUsername: string;
@@ -51,7 +53,9 @@ export default function RightPanel({
                     >
                         <Users size={13} />
                         <span>Peers</span>
-                        <span className="text-[10px] font-mono opacity-70">({users.length})</span>
+                        <span className="text-[10px] font-mono opacity-70">
+                            (<CountUp to={users.length} duration={0.3} />)
+                        </span>
                     </button>
                     <button
                         onClick={() => setActiveTab('tasks')}
@@ -65,7 +69,7 @@ export default function RightPanel({
                         <span>Tasks</span>
                         {taskCount > 0 && (
                             <span className="text-[9px] font-mono px-1 rounded-md bg-amber-500/20 text-amber-300 font-bold">
-                                {taskCount}
+                                <CountUp to={taskCount} duration={0.3} />
                             </span>
                         )}
                     </button>

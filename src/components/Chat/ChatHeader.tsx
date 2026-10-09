@@ -2,6 +2,8 @@ import React from 'react';
 import { Shield, Hash, Users, Lock, Unlock, Pin, Sidebar as SidebarIcon } from 'lucide-react';
 import { useUIStore } from '../../store/appStore';
 
+import { DecryptedText, ShinyText } from '../ReactBits';
+
 interface ChatHeaderProps {
     activeView: string;
     activeChannel: string;
@@ -30,6 +32,7 @@ export default function ChatHeader({
     const isDm = activeView === 'dm';
     const visibleUsers = Array.isArray(users) ? users.slice(0, 4) : [];
     const overflowCount = Array.isArray(users) && users.length > 4 ? users.length - 4 : 0;
+    const channelName = isDm ? (title.replace('@', '') || 'Direct Messages') : activeChannel;
 
     return (
         <header className="h-13 border-b border-white/[0.07] flex items-center justify-between px-4 bg-[#0a0d14]/70 backdrop-blur-md shrink-0 z-10 select-none">
@@ -45,7 +48,11 @@ export default function ChatHeader({
 
                 <div className="flex items-center gap-2 min-w-0">
                     <h1 className="text-sm font-bold text-slate-100 capitalize truncate tracking-tight">
-                        {isDm ? (title.replace('@', '') || 'Direct Messages') : activeChannel}
+                        <DecryptedText 
+                            text={channelName}
+                            speed={30}
+                            characters="0123456789ABCDEF!#$*~"
+                        />
                     </h1>
 
                     <div className="h-3.5 w-px bg-white/10 hidden sm:block shrink-0" />
@@ -68,7 +75,13 @@ export default function ChatHeader({
                     title={isEncrypted ? "Libsodium XSalsa20-Poly1305 Stream Active" : "Unencrypted Plaintext LAN"}
                 >
                     <Shield size={12} className={isEncrypted ? 'text-emerald-400' : 'text-slate-400'} />
-                    <span className="font-semibold">{isEncrypted ? 'E2EE ACTIVE' : 'OPEN LAN'}</span>
+                    <span className="font-semibold">
+                        {isEncrypted ? (
+                            <ShinyText text="E2EE ACTIVE" speed={4} className="text-emerald-300" />
+                        ) : (
+                            'OPEN LAN'
+                        )}
+                    </span>
                 </div>
 
                 {/* Avatar Stack */}

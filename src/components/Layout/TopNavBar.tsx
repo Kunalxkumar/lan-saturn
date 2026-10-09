@@ -3,6 +3,8 @@ import { Search, History, Bell, Shield, Radio, Terminal, Sparkles } from 'lucide
 import { useUIStore } from '../../store/appStore';
 import SaturnBrandIcon from '../common/SaturnBrandIcon';
 
+import { ShinyText } from '../ReactBits';
+
 interface TopNavBarProps {
     searchQuery: string;
     setSearchQuery: (query: string) => void;
@@ -28,9 +30,11 @@ export default function TopNavBar({
                         <SaturnBrandIcon size={22} />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-100 tracking-tight leading-none group-hover:text-sky-300 transition-colors">
-                            LAN Saturn
-                        </span>
+                        <ShinyText 
+                            text="LAN Saturn" 
+                            speed={6} 
+                            className="text-sm font-bold tracking-tight leading-none group-hover:text-sky-300 transition-colors" 
+                        />
                         <span className="text-[10px] font-mono text-slate-400 tracking-wider">
                             v1.2.1 • Local Peer
                         </span>

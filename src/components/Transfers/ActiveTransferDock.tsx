@@ -12,6 +12,7 @@ import {
     FileText 
 } from 'lucide-react';
 import { useTransferStore, ActiveTransfer } from '../../store/appStore';
+import { ShinyText, CountUp } from '../ReactBits';
 
 export default function ActiveTransferDock() {
     const { transfers, removeTransfer } = useTransferStore();
@@ -161,7 +162,8 @@ export default function ActiveTransferDock() {
                                         <span className="flex items-center gap-1 text-slate-400">
                                             {isCompleted ? (
                                                 <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-                                                    <ShieldCheck size={11} /> SHA-256 Verified
+                                                    <ShieldCheck size={11} /> 
+                                                    <ShinyText text="SHA-256 Verified ✓" speed={4} className="text-emerald-300 font-semibold" />
                                                 </span>
                                             ) : isVerifying ? (
                                                 <span className="text-sky-300 animate-pulse font-semibold">
@@ -169,7 +171,7 @@ export default function ActiveTransferDock() {
                                                 </span>
                                             ) : isPaused ? (
                                                 <span className="text-amber-400 font-semibold">
-                                                    PAUSED ({t.percent}%)
+                                                    PAUSED (<CountUp to={t.percent} duration={0.2} />%)
                                                 </span>
                                             ) : isFailed ? (
                                                 <span className="text-rose-400 flex items-center gap-1 font-semibold">
@@ -177,7 +179,11 @@ export default function ActiveTransferDock() {
                                                 </span>
                                             ) : (
                                                 <span>
-                                                    {t.speedMBs > 0 ? `${t.speedMBs} MB/s` : 'Connecting...'} 
+                                                    {t.speedMBs > 0 ? (
+                                                        <>
+                                                            <CountUp to={t.speedMBs} decimals={1} duration={0.25} /> MB/s
+                                                        </>
+                                                    ) : 'Connecting...'} 
                                                     {t.etaSeconds > 0 ? ` • ETA ${t.etaSeconds}s` : ''}
                                                 </span>
                                             )}
@@ -186,7 +192,7 @@ export default function ActiveTransferDock() {
                                         <span className={`font-semibold ${
                                             isCompleted ? 'text-emerald-400' : 'text-slate-300'
                                         }`}>
-                                            {t.percent}%
+                                            <CountUp to={t.percent} duration={0.25} />%
                                         </span>
                                     </div>
 
