@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, Key, X, ShieldAlert, ArrowRight } from 'lucide-react';
 
 interface JoinChannelModalProps {
@@ -30,6 +30,14 @@ export default function JoinChannelModal({
         setJoiningChannel(null);
         setActiveChannel('general');
     };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') handleCancel();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     return (
         <div className="modal-overlay" onClick={handleCancel}>

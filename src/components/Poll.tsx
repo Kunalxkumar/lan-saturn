@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart3, Plus, Trash2, X, CheckCircle2, Circle } from 'lucide-react';
 
 interface PollProps {
@@ -114,6 +114,14 @@ interface CreatePollModalProps {
 export function CreatePollModal({ onSubmit, onCancel }: CreatePollModalProps) {
     const [question, setQuestion] = useState('');
     const [options, setOptions] = useState(['', '']);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onCancel();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onCancel]);
 
     const addOption = () => {
         if (options.length < 6) {
